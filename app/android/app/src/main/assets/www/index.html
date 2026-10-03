@@ -193,6 +193,26 @@ html[data-tema="noche"] .kanji{text-shadow:3px 3px 0 var(--acento2)}
 .log-inst .err{color:var(--down)}.log-inst .err::before{content:"✖ ";color:var(--down)}
 .boom{font-size:44px;font-weight:900;font-style:italic;color:var(--acento);text-align:center;font-family:"sans-serif-condensed","Roboto Condensed",system-ui,sans-serif;transform:rotate(-4deg);margin:10px 0}
 html[data-tema="noche"] .boom{text-shadow:3px 3px 0 var(--acento2)}
+
+/* ============ Tutorial ============ */
+#tuto{position:fixed;inset:0;z-index:45;background:rgba(5,3,10,.82);display:none;align-items:center;justify-content:center;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
+#tuto.open{display:flex}
+.tuto-caja{width:100%;max-width:560px;max-height:100%;display:flex;flex-direction:column;background:var(--panel);border:3px solid var(--tinta);border-radius:8px;overflow:hidden}
+html[data-estilo="manga"] .tuto-caja{box-shadow:6px 6px 0 var(--acento)}
+html[data-tema="noche"] .tuto-caja{border-color:#fff}
+.tuto-cab{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;background:var(--acento);color:var(--sobre-acento)}
+.tuto-cab b{font-family:"sans-serif-condensed","Roboto Condensed",system-ui,sans-serif;font-style:italic;font-size:16px;letter-spacing:.04em}
+.tuto-cab button{background:transparent;border:2px solid currentColor;color:inherit;padding:3px 9px}
+.tuto-cuerpo{padding:16px;overflow:auto;flex:1;font-size:14px;line-height:1.55}
+.tuto-cuerpo h2{margin:2px 0 8px}
+.tuto-cuerpo ul,.tuto-cuerpo ol{margin:8px 0;padding-left:20px}.tuto-cuerpo li{margin-bottom:6px}
+.tuto-num{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--acento2);color:var(--tinta);font-weight:900;font-size:22px;border:3px solid var(--tinta);float:right;margin:0 0 6px 10px;font-style:italic}
+.req{display:grid;gap:7px;margin:10px 0}
+.req div{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:2px solid var(--line);border-radius:4px;padding:8px}
+.req div span{font-size:20px;flex:none}.req div small{display:block}
+.tuto-pie{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:10px 12px;border-top:2px solid var(--line)}
+.tuto-pie .puntos{justify-content:center}
+.tuto-pie button{min-width:56px;min-height:44px}
 </style>
 </head>
 <body>
@@ -224,9 +244,9 @@ html[data-tema="noche"] .boom{text-shadow:3px 3px 0 var(--acento2)}
       <h1>KUMO BOT</h1>
       <span class="eyebrow">クモ · TRADING CRIPTO EN TU PROPIA NUBE</span>
     </div>
-    <div class="globo">¡Hola! Soy <b>Kumo</b> ☁️ Opero cripto por ti, 24/7, desde <b>tu propia nube</b> y con <b>tus reglas</b>. Tus claves nunca pasan por servidores ajenos.</div>
+    <div class="globo">¡Hola! Soy <b>Kumo</b> ☁️ Opero cripto por ti, 24/7, desde <b>tu propia nube</b> y con <b>tus reglas</b>. Vengo vacío: empiezo a funcionar cuando conectes <b>tus</b> cuentas y claves.</div>
     <div class="ayuda">Proyecto abierto y gratuito. Funciona con Crypto.com, Kraken, Coinbase, Binance y más de 100 exchanges. Empieza siempre en <b>simulación</b>: nada de dinero real hasta que tú lo actives.</div>
-    <div class="onb-pie" style="grid-template-columns:1fr"><button class="primary" data-ir="tema">EMPEZAR ▶</button></div>
+    <div class="onb-pie" style="grid-template-columns:1fr"><button class="primary" data-ir="tema">EMPEZAR ▶</button><button class="ghost small" data-tuto="0">📖 VER TUTORIAL</button></div>
   </section>
 
   <section class="paso" data-paso="tema">
@@ -249,7 +269,7 @@ html[data-tema="noche"] .boom{text-shadow:3px 3px 0 var(--acento2)}
       <button class="opcion" data-ir="conectar"><span class="ico">🔗</span><span><b>Ya tengo una nube</b><small>Conecta este teléfono con la dirección y el token de tu nube.</small></span></button>
       <button class="opcion" id="onbDemo"><span class="ico">🎮</span><span><b>Probar en modo demo</b><small>Mira cómo funciona con datos de ejemplo, sin cuentas.</small></span></button>
     </div>
-    <div class="onb-pie"><button data-ir="tema">◀</button><span></span></div>
+    <div class="onb-pie"><button data-ir="tema">◀</button><button class="secundario" data-tuto="1">📖 ¿QUÉ NECESITO?</button></div>
   </section>
 
   <section class="paso" data-paso="conectar">
@@ -349,6 +369,16 @@ html[data-tema="noche"] .boom{text-shadow:3px 3px 0 var(--acento2)}
  </div>
 </div>
 
+
+<!-- ====================== TUTORIAL ====================== -->
+<div id="tuto" role="dialog" aria-modal="true" aria-label="Tutorial de Kumo">
+  <div class="tuto-caja">
+    <div class="tuto-cab"><b>📖 TUTORIAL · <span id="tutoN">1</span>/<span id="tutoT">6</span></b><button id="tutoCerrar" aria-label="Cerrar tutorial">✕</button></div>
+    <div class="tuto-cuerpo" id="tutoCuerpo"></div>
+    <div class="tuto-pie"><button id="tutoAtras">◀</button><div class="puntos" id="tutoPuntos"></div><button id="tutoSig" class="primary">▶</button></div>
+  </div>
+</div>
+
 <!-- ====================== APP ====================== -->
 <div id="demoBanda" class="demo-banda oculto"><span>MODO DEMO · DATOS DE EJEMPLO</span></div>
 <header class="topbar">
@@ -428,7 +458,7 @@ html[data-tema="noche"] .boom{text-shadow:3px 3px 0 var(--acento2)}
   <div class="panel">
     <div class="panel-title"><span>Interfaz</span></div>
     <div class="chips" id="temaChips"><button data-tema="noche">NEÓN NOCHE</button><button data-tema="dia">NEÓN DÍA</button><button data-tema="clasica">CLÁSICA</button></div>
-    <button id="verBienvenida" class="small ghost" style="margin-top:8px">VER BIENVENIDA OTRA VEZ</button>
+    <div class="grid two" style="margin-top:8px"><button id="verBienvenida" class="small ghost">VER BIENVENIDA</button><button class="small ghost" data-tuto="0">📖 TUTORIAL</button></div>
   </div>
   <div class="panel">
     <div class="panel-title"><span>Modo de operación</span><span id="modoCfg" class="pill">—</span></div>
@@ -482,7 +512,7 @@ html[data-tema="noche"] .boom{text-shadow:3px 3px 0 var(--acento2)}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.0.0';
+var APP_VERSION='1.0.1';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -614,11 +644,10 @@ $('cfSig').onclick=function(){
   if(!t){v.className='valida bad';v.textContent='Pega tu token de Cloudflare';return}
   v.className='valida';v.textContent='Validando…';
   var cab={Authorization:'Bearer '+t};
-  httpExterno('GET','https://api.cloudflare.com/client/v4/user/tokens/verify',cab).then(function(r){
+  // Sirve para tokens de usuario y de cuenta: /user/tokens/verify rechaza los de cuenta.
+  httpExterno('GET','https://api.cloudflare.com/client/v4/accounts?per_page=50',cab).then(function(r){
     if(!r.data||!r.data.success)throw new Error('Cloudflare rechazó el token');
-    return httpExterno('GET','https://api.cloudflare.com/client/v4/accounts?per_page=50',cab);
-  }).then(function(r){
-    var cuentas=(r.data&&r.data.result)||[];
+    var cuentas=r.data.result||[];
     if(!cuentas.length)throw new Error('El token no tiene acceso a ninguna cuenta: elige tu cuenta en «Account Resources»');
     W.cf={token:t,cuenta:cuentas[0].id};
     $('cfCuenta').innerHTML=cuentas.map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>'}).join('');
@@ -796,6 +825,64 @@ $('instalar').onclick=function(){
     $('instalar').textContent='↻ REINTENTAR';
   }).then(function(){instalando=false;$('instalar').disabled=false;$('resAtras').disabled=false});
 };
+
+
+// ================================================================ TUTORIAL
+var TUTO=[
+ '<span class="tuto-num">1</span><span class="eyebrow"><span class="kata">ようこそ</span>BIENVENIDA</span><h2>¿Qué es Kumo?</h2>'+
+ '<p>Kumo es un bot de trading cripto <b>abierto y gratis</b>. Esta app viene <b>vacía</b>: no tiene cuentas ni claves de nadie.</p>'+
+ '<div class="globo">Funciono cuando tú conectas <b>tus propias</b> cuentas. Vivo en <b>tu</b> nube y solo tú ves tus claves y tu dinero.</div>'+
+ '<p class="ayuda">Mientras tanto puedes explorar el <b>modo demo</b> con datos de ejemplo.</p>',
+ '<span class="tuto-num">2</span><span class="eyebrow"><span class="kata">準備</span>ANTES DE EMPEZAR</span><h2>Lo que necesitas</h2>'+
+ '<p>Todo es gratis. Ten a mano tu correo y unos <b>15 minutos</b>:</p><div class="req">'+
+ '<div><span>🐙</span><p style="margin:0"><b>Cuenta de GitHub</b><small>Ejecuta el bot cada 30 min y guarda tus claves cifradas.</small></p></div>'+
+ '<div><span>☁️</span><p style="margin:0"><b>Cuenta de Cloudflare</b><small>Aloja tu nube: la app se conecta a ella.</small></p></div>'+
+ '<div><span>🧠</span><p style="margin:0"><b>Cuenta de Groq</b> (opcional)<small>La IA que revisa las operaciones y analiza monedas.</small></p></div>'+
+ '<div><span>💱</span><p style="margin:0"><b>Cuenta en un exchange</b><small>Crypto.com, Kraken, Coinbase… Puedes empezar sin claves, solo en simulación.</small></p></div></div>',
+ '<span class="tuto-num">3</span><span class="eyebrow"><span class="kata">鍵</span>LAS CLAVES</span><h2>Cómo sacar cada clave</h2>'+
+ '<p>El asistente te da un botón para cada una. El truco: <b>abre el enlace → crea la clave → cópiala → vuelve a Kumo → pégala</b>.</p><ol>'+
+ '<li><b>GitHub</b>: token clásico con permisos <code>repo</code> y <code>workflow</code> (el enlace ya los marca).</li>'+
+ '<li><b>Cloudflare</b>: My Profile → API Tokens → Create Token → plantilla <b>«Edit Cloudflare Workers»</b>.</li>'+
+ '<li><b>Groq</b>: console.groq.com → API Keys → Create API Key.</li>'+
+ '<li><b>Exchange</b>: crea una API key con <b>lectura y trading. NUNCA con retiros.</b></li></ol>'+
+ '<p class="notice warn">Cada clave se muestra una sola vez: cópiala antes de cerrar la página.</p>',
+ '<span class="tuto-num">4</span><span class="eyebrow"><span class="kata">発進</span>INSTALACIÓN</span><h2>Qué hago con tus claves</h2><ol>'+
+ '<li>Creo un repositorio <b>privado</b> en tu GitHub a partir de la plantilla abierta.</li>'+
+ '<li>Guardo tus claves como <b>secretos cifrados</b> de ese repositorio: no quedan en el teléfono.</li>'+
+ '<li>Instalo tu nube en tu Cloudflare (2-4 min).</li>'+
+ '<li>Lanzo el primer ciclo. Después opero solo <b>cada 30 minutos</b>.</li></ol>'+
+ '<p class="ayuda">Si algo falla, te muestro el error y puedes tocar <b>Reintentar</b>: retomo donde quedé.</p>',
+ '<span class="tuto-num">5</span><span class="eyebrow"><span class="kata">安全</span>TU DINERO</span><h2>Seguridad primero</h2><ul>'+
+ '<li>Empiezo <b>siempre en simulación</b>: cartera virtual con precios reales.</li>'+
+ '<li>El dinero real lo activas tú en Config, con doble confirmación.</li>'+
+ '<li>Por defecto <b>nunca vendo con pérdida</b> y cada operación tiene un monto máximo.</li>'+
+ '<li>Puedes <b>pausarme</b> cuando quieras desde el Panel.</li></ul>'+
+ '<p class="notice bad">El trading tiene riesgo y Kumo no es asesoría financiera. Usa solo dinero que puedas perder.</p>',
+ '<span class="tuto-num">6</span><span class="eyebrow"><span class="kata">毎日</span>DÍA A DÍA</span><h2>Cómo usar la app</h2><ul>'+
+ '<li><b>⌂ Panel</b>: valor, último ciclo, pausar o lanzar un ciclo ya.</li>'+
+ '<li><b>⌖ Radar</b>: monedas con más volumen, análisis con IA e «Incluir».</li>'+
+ '<li><b>◎ IA</b>: qué opinó la IA y la bitácora de avisos.</li>'+
+ '<li><b>◈ Cartera</b> y <b>◇ Estrategia</b>: tus activos, tu reparto y tus reglas.</li>'+
+ '<li><b>⚙ Config</b>: tema, dinero real, notificaciones y cambiar claves.</li></ul>'+
+ '<label class="check" style="margin-top:12px;font-weight:700"><input type="checkbox" id="tutoOk"> Entendí: Kumo usa solo mis cuentas y empieza en simulación.</label>'
+];
+var tutoI=0,tutoDespues=null;
+function pintarTuto(){
+  $('tutoCuerpo').innerHTML=TUTO[tutoI];$('tutoCuerpo').scrollTop=0;
+  $('tutoN').textContent=tutoI+1;$('tutoT').textContent=TUTO.length;
+  $('tutoPuntos').innerHTML=TUTO.map(function(_,k){return '<i class="'+(k<=tutoI?'on':'')+'"></i>'}).join('');
+  $('tutoAtras').disabled=tutoI===0;
+  var ult=tutoI===TUTO.length-1;$('tutoSig').textContent=ult?'¡EMPEZAR!':'▶';
+  if(ult){$('tutoSig').disabled=!S.tuto;$('tutoOk').checked=!!S.tuto;$('tutoOk').onchange=function(){$('tutoSig').disabled=!this.checked}}else $('tutoSig').disabled=false;
+}
+function abrirTuto(i,despues){tutoI=i||0;tutoDespues=despues||null;$('tuto').classList.add('open');pintarTuto()}
+function cerrarTuto(){$('tuto').classList.remove('open');var f=tutoDespues;tutoDespues=null;if(f)f()}
+$('tutoAtras').onclick=function(){if(tutoI>0){tutoI--;pintarTuto()}};
+$('tutoSig').onclick=function(){if(tutoI<TUTO.length-1){tutoI++;pintarTuto();return}S.tuto=true;guardarS();cerrarTuto()};
+$('tutoCerrar').onclick=cerrarTuto;
+document.addEventListener('click',function(e){var b=e.target.closest('[data-tuto]');if(b){e.preventDefault();abrirTuto(Number(b.getAttribute('data-tuto')))}});
+// «Crear mi nube» exige haber visto el tutorial al menos una vez.
+document.querySelector('[data-paso="inicio"] [data-ir="gh"]').onclick=function(){if(S.tuto)irPaso('gh');else abrirTuto(0,function(){if(S.tuto)irPaso('gh')})};
 
 // ================================================================ APP
 function pintarEstado(){
@@ -1037,6 +1124,7 @@ $('avisosProbar').onclick=function(){NATIVO&&NATIVO.probar('Kumo Bot ☁️','As
 
 // ---------------------------------------------------------------- Atrás (Android)
 window.appBack=function(){
+  if($('tuto').classList.contains('open')){if(tutoI>0){tutoI--;pintarTuto()}else cerrarTuto();return true}
   if($('modal').classList.contains('open')){$('mNo').click();return true}
   if($('onb').classList.contains('open')){var i=ORDEN.indexOf(pasoActual);if(pasoActual==='conectar'){irPaso('inicio');return true}if(i>0&&!instalando){irPaso(ORDEN[i-1]);return true}return !instalando?false:true}
   var act=document.querySelector('.screen.active');if(act&&act.id!=='panel'){irA('panel');return true}
@@ -1078,8 +1166,8 @@ function iniciarApp(){
 }
 aplicarTema(S.tema||'noche');
 $('appVer').textContent='v'+APP_VERSION;
-if(!S.onb||(!S.url&&!S.demo))abrirOnb('hola');else iniciarApp();
-window.__kumo={S:S,datos:datos,irPaso:irPaso,irA:irA,W:function(){return W}};
+if(!S.onb||(!S.url&&!S.demo)){abrirOnb('hola');if(!S.tuto)abrirTuto(0)}else iniciarApp();
+window.__kumo={tuto:function(){return tutoI},S:S,datos:datos,irPaso:irPaso,irA:irA,W:function(){return W}};
 })();
 </script>
 </body>
