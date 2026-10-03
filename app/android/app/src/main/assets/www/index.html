@@ -213,6 +213,15 @@ html[data-tema="noche"] .tuto-caja{border-color:#fff}
 .tuto-pie{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:10px 12px;border-top:2px solid var(--line)}
 .tuto-pie .puntos{justify-content:center}
 .tuto-pie button{min-width:56px;min-height:44px}
+
+/* ============ Donaciones ============ */
+.don{display:grid;gap:10px}
+.don-card{background:var(--panel2);border:2px solid var(--line);border-radius:5px;padding:12px;text-align:center}
+.don-card .cab{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
+.don-card .cab img{width:30px;height:30px}
+.don-card .qr{width:168px;height:168px;background:#fff;padding:6px;border-radius:4px;border:2px solid var(--tinta)}
+.dir{display:block;font:11px/1.45 ui-monospace,Menlo,monospace;word-break:break-all;background:var(--bg);border:1px dashed var(--line);border-radius:4px;padding:7px;margin:8px 0;user-select:all;-webkit-user-select:all}
+@media(min-width:560px){.don{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -485,6 +494,22 @@ html[data-tema="noche"] .tuto-caja{border-color:#fff}
     <div class="panel-title"><span>Acerca de</span></div>
     <div class="grid two"><div class="metric"><span>App</span><b id="appVer">—</b></div><div class="metric"><span>Nube</span><b id="nubeVer2">—</b></div></div>
     <p class="notice">Kumo Bot es software libre (MIT). Código: <a href="#" data-url="https://github.com/tradiabot/kumo-bot">github.com/tradiabot/kumo-bot</a>. Trading con riesgo: usa solo dinero que puedas perder.</p>
+    <button class="small secundario" id="irDonar" style="margin-top:9px;width:100%">☕ DONAR AL DESARROLLADOR</button>
+  </div>
+  <div class="panel" id="donar">
+    <div class="panel-title"><span>☕ Apoya al desarrollador</span><span class="pill acento">VOLUNTARIO</span></div>
+    <p class="muted" style="margin:0 0 10px;font-size:12px">Kumo es gratis y abierto. Si te sirve, puedes invitar un café al desarrollador. Envía cada moneda <b>solo por su propia red</b>.</p>
+    <div class="don">
+      <div class="don-card"><div class="cab"><img src="donar/bitcoin.svg" alt=""><b>Bitcoin (BTC)</b></div>
+        <img class="qr" src="donar/qr-bitcoin.svg" alt="Código QR de la dirección Bitcoin">
+        <code class="dir" id="dirBtc">bc1qd9j45f4t0jwyhjhqh2kvz2cr7k8xye460rr2y7</code>
+        <div class="grid two"><button class="small" data-copiar="dirBtc">COPIAR</button><button class="small primary" data-billetera="bitcoin:bc1qd9j45f4t0jwyhjhqh2kvz2cr7k8xye460rr2y7">BILLETERA</button></div></div>
+      <div class="don-card"><div class="cab"><img src="donar/monero.svg" alt=""><b>Monero (XMR)</b></div>
+        <img class="qr" src="donar/qr-monero.svg" alt="Código QR de la dirección Monero">
+        <code class="dir" id="dirXmr">447gTj6Hg6gaAEAUmjqfhqDZr1PziUTvbT4LYLpmLVnTNVFK6cqeqPfh6P4neMKLWX5jDXAr94fWHacJwDvjmCzBBH8wPBt</code>
+        <div class="grid two"><button class="small" data-copiar="dirXmr">COPIAR</button><button class="small primary" data-billetera="monero:447gTj6Hg6gaAEAUmjqfhqDZr1PziUTvbT4LYLpmLVnTNVFK6cqeqPfh6P4neMKLWX5jDXAr94fWHacJwDvjmCzBBH8wPBt">BILLETERA</button></div></div>
+    </div>
+    <p class="ayuda" style="margin:10px 0 0">¡Gracias! ありがとう 🙏</p>
   </div>
   <div class="danger-zone">
     <div class="panel-title"><span class="down">Zona de peligro</span></div>
@@ -512,7 +537,7 @@ html[data-tema="noche"] .tuto-caja{border-color:#fff}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.0.1';
+var APP_VERSION='1.0.2';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -1073,7 +1098,7 @@ function pintarConfig(){
 }
 $('verBienvenida').onclick=function(){abrirOnb('hola')};
 $('verToken').onclick=function(){var i=$('cfgToken');i.type=i.type==='password'?'text':'password'};
-$('copiarToken').onclick=function(){try{navigator.clipboard.writeText(S.token||'').then(function(){toast('Token copiado')},function(){toast('No se pudo copiar',true)})}catch(e){toast('No se pudo copiar',true)}};
+$('copiarToken').onclick=function(){copiarTexto(S.token||'','Token copiado')};
 $('modoBtn').onclick=function(){
   var real=(datos.config||{}).modo==='real';
   if(real){api('/api/config',{modo:'simulacion'}).then(function(d){datos.config=d.config;if(datos.estado)datos.estado.config=d.config;pintarConfig();pintarEstado();toast('Volviste a simulación')}).catch(function(e){toast(traduce(e),true)});return}
@@ -1098,6 +1123,22 @@ $('actualizarNube').onclick=function(){
 };
 $('olvidarGh').onclick=function(){if(S.gh){delete S.gh.token;guardarS();pintarConfig();toast('Token de GitHub borrado de este teléfono')}};
 $('olvidarTodo').onclick=function(){confirmar('Desconectar','Borra de este teléfono la conexión, el token y tus preferencias. Tu nube sigue funcionando.','DESCONECTAR').then(function(ok){if(!ok)return;if(NATIVO&&NATIVO.desactivar)NATIVO.desactivar();var t=S.tema;S={tema:t};guardarS();location.reload()})};
+
+
+// ---------------------------------------------------------------- Donaciones
+function copiarTexto(t,ok){
+  if(NATIVO&&NATIVO.copiar){NATIVO.copiar(t);toast(ok);return}
+  try{navigator.clipboard.writeText(t).then(function(){toast(ok)},function(){toast('No se pudo copiar: mantén pulsada la dirección',true)})}catch(e){toast('No se pudo copiar: mantén pulsada la dirección',true)}
+}
+document.addEventListener('click',function(e){
+  var c=e.target.closest('[data-copiar]');
+  if(c){copiarTexto($(c.getAttribute('data-copiar')).textContent.trim(),'Dirección copiada');return}
+  var b=e.target.closest('[data-billetera]');
+  if(b){var uri=b.getAttribute('data-billetera');
+    if(NATIVO&&NATIVO.abrirBilletera){if(!NATIVO.abrirBilletera(uri))toast('No hay billetera de '+(uri.indexOf('monero')===0?'Monero':'Bitcoin')+' instalada: copia la dirección',true)}
+    else location.href=uri;}
+});
+$('irDonar').onclick=function(){$('donar').scrollIntoView({behavior:'smooth',block:'start'})};
 
 // ---------------------------------------------------------------- Notificaciones (nativas)
 function estadoAvisos(){if(!NATIVO)return null;try{return JSON.parse(NATIVO.estado())}catch(e){return null}}

@@ -6,6 +6,12 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Android 11+: necesario para saber si hay una billetera que abra bitcoin: o monero: -->
+    <queries>
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="bitcoin" /></intent>
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="monero" /></intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"

@@ -136,6 +136,25 @@ public class MainActivity extends Activity {
             if (url != null && (url.startsWith("https://") || url.startsWith("http://"))) runOnUiThread(() -> abrirExterno(url));
         }
 
+        /** Abre una billetera con bitcoin:/monero:. Devuelve false si no hay ninguna instalada. */
+        @JavascriptInterface
+        public boolean abrirBilletera(String uri) {
+            if (uri == null || !(uri.startsWith("bitcoin:") || uri.startsWith("monero:"))) return false;
+            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+            if (i.resolveActivity(getPackageManager()) == null) return false;
+            runOnUiThread(() -> { try { startActivity(i); } catch (Exception ignored) {} });
+            return true;
+        }
+
+        /** Copia al portapapeles (navigator.clipboard no funciona en un WebView con file://). */
+        @JavascriptInterface
+        public void copiar(String texto) {
+            runOnUiThread(() -> {
+                android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("Kumo", texto));
+            });
+        }
+
         /**
          * HTTP nativo para APIs que no aceptan CORS desde un WebView (Cloudflare).
          * Solo HTTPS. Responde llamando a window.kumoHttp(id, status, texto).

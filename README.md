@@ -1,7 +1,7 @@
 <p align="center"><img src="docs/logo-512.png" width="140" alt="Kumo Bot"></p>
 <h1 align="center">Kumo Bot 雲</h1>
 <p align="center"><b>Bot de trading cripto que corre en <i>tu propia nube</i>, con tus reglas.</b><br>
-App Android · Cloudflare Workers · GitHub Actions · IA con Groq · 100+ exchanges vía ccxt</p>
+<a href="#-apoya-al-desarrollador">☕ Donar</a> · App Android · Cloudflare Workers · GitHub Actions · IA con Groq · 100+ exchanges vía ccxt</p>
 
 ---
 
@@ -54,6 +54,27 @@ mantiene este repositorio.
 - Las claves del exchange solo existen como secretos cifrados de **tu** repositorio.
 - La app guarda en el teléfono solo la dirección de tu nube, su token y, opcionalmente, el token de GitHub (para «Ciclo ahora»). Puedes borrarlo en Config.
 - Crea siempre claves de exchange **sin permiso de retiro**.
+
+## ☕ Apoya al desarrollador
+
+Kumo es gratis y abierto. Si te sirve, puedes invitar un café al desarrollador con una donación voluntaria:
+
+<table>
+<tr>
+<td align="center" width="50%">
+<img src="docs/donar/bitcoin.svg" width="48" alt="Bitcoin"><br><b>Bitcoin (BTC)</b><br><br>
+<img src="docs/donar/qr-bitcoin.svg" width="180" alt="QR Bitcoin"><br>
+<sub><code>bc1qd9j45f4t0jwyhjhqh2kvz2cr7k8xye460rr2y7</code></sub>
+</td>
+<td align="center" width="50%">
+<img src="docs/donar/monero.svg" width="48" alt="Monero"><br><b>Monero (XMR)</b><br><br>
+<img src="docs/donar/qr-monero.svg" width="180" alt="QR Monero"><br>
+<sub><code>447gTj6Hg6gaAEAUmjqfhqDZr1PziUTvbT4LYLpmLVnTNVFK6cqeqPfh6P4neMKLWX5jDXAr94fWHacJwDvjmCzBBH8wPBt</code></sub>
+</td>
+</tr>
+</table>
+
+Envía solo **BTC por la red Bitcoin** a la dirección de Bitcoin y solo **XMR** a la de Monero. También puedes donar desde la app: **Config → Apoya al desarrollador**.
 
 > ⚠️ El trading de criptomonedas tiene riesgo. Kumo no es asesoría financiera. Usa solo dinero que puedas perder.
 
