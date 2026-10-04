@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es" data-tema="noche" data-estilo="manga">
+<html lang="es" data-tema="pro" data-estilo="pro">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0d0718">
+<meta name="theme-color" content="#0b0d14">
 <title>Kumo Bot</title>
 <style>
 /* ============ Temas ============ */
@@ -222,6 +222,104 @@ html[data-tema="noche"] .tuto-caja{border-color:#fff}
 .don-card .qr{width:168px;height:168px;background:#fff;padding:6px;border-radius:4px;border:2px solid var(--tinta)}
 .dir{display:block;font:11px/1.45 ui-monospace,Menlo,monospace;word-break:break-all;background:var(--bg);border:1px dashed var(--line);border-radius:4px;padding:7px;margin:8px 0;user-select:all;-webkit-user-select:all}
 @media(min-width:560px){.don{grid-template-columns:1fr 1fr}}
+
+/* ============ Estilo Pro (Grafito / Porcelana) ============ */
+html[data-tema="pro"]{
+  --bg:#0b0d14;--panel:#12151f;--panel2:#191d2a;--line:#262b3b;--text:#e9ecf4;--muted:#8a92a8;
+  --acento:#ff4f97;--acento2:#38d4f0;--up:#2fd08c;--down:#ff6370;--warn:#f5c04e;--tinta:#262b3b;
+  --sombra:rgba(0,0,0,.35);--sobre-acento:#ffffff;--dot:transparent;--rayas:transparent;
+  --suave:rgba(255,79,151,.13);--suave2:rgba(56,212,240,.12);--glow:rgba(124,92,255,.16);
+  --barra:#0b0d14;color-scheme:dark;
+}
+html[data-tema="pro-claro"]{
+  --bg:#f5f6fa;--panel:#ffffff;--panel2:#f2f4f9;--line:#e2e5ee;--text:#151927;--muted:#5f677b;
+  --acento:#e0337c;--acento2:#0a8fb0;--up:#0f9f5c;--down:#d93a4a;--warn:#b07a00;--tinta:#e2e5ee;
+  --sombra:rgba(20,25,40,.08);--sobre-acento:#ffffff;--dot:transparent;--rayas:transparent;
+  --suave:rgba(224,51,124,.09);--suave2:rgba(10,143,176,.09);--glow:rgba(224,51,124,.08);
+  --barra:#f5f6fa;color-scheme:light;
+}
+html[data-estilo="pro"] body{font:14px/1.5 system-ui,-apple-system,Roboto,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;
+  background:radial-gradient(120% 60% at 85% -10%,var(--glow),transparent 60%) fixed,var(--bg)}
+html[data-estilo="pro"] .titulo,html[data-estilo="pro"] h1,html[data-estilo="pro"] h2{font-family:inherit;font-weight:700;letter-spacing:-.015em}
+html[data-estilo="pro"] h1{font-size:22px}html[data-estilo="pro"] h2{font-size:21px}
+html[data-estilo="pro"] a{color:var(--acento)}
+html[data-estilo="pro"] button{border:1px solid var(--line);border-radius:10px;font-weight:600;transition:background .15s,border-color .15s,transform .1s}
+html[data-estilo="pro"] button:active{transform:scale(.98)}
+html[data-estilo="pro"] input,html[data-estilo="pro"] select{border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+html[data-estilo="pro"] input:focus,html[data-estilo="pro"] select:focus{outline:0;border-color:var(--acento);box-shadow:0 0 0 3px var(--suave)}
+html[data-estilo="pro"] .primary{background:linear-gradient(135deg,var(--acento),#9b5cff);border-color:transparent;color:var(--sobre-acento);letter-spacing:.03em;box-shadow:0 6px 18px -8px var(--acento)}
+html[data-estilo="pro"] .secundario{border-color:var(--line);color:var(--acento2);background:var(--suave2)}
+html[data-estilo="pro"] .danger{background:transparent;border-color:color-mix(in srgb,var(--down) 45%,transparent)}
+html[data-estilo="pro"] .ghost{border-color:var(--line);color:var(--muted)}
+html[data-estilo="pro"] .eyebrow,html[data-estilo="pro"] .label{letter-spacing:.1em;font-weight:600}
+html[data-estilo="pro"] .kata{color:var(--muted);opacity:.7;letter-spacing:.1em}
+/* Estructura */
+html[data-estilo="pro"] .topbar{background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+html[data-estilo="pro"] .marca svg{width:34px;height:34px;border-radius:9px}
+html[data-estilo="pro"] .logo-txt{font-size:19px;font-weight:700;letter-spacing:-.01em}
+html[data-estilo="pro"] .nav{background:color-mix(in srgb,var(--panel) 90%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+html[data-estilo="pro"] .nav button{border:0;border-radius:12px;margin:0 2px}
+html[data-estilo="pro"] .nav button.active{color:var(--acento);background:var(--suave)}
+html[data-estilo="pro"] .nav button small{font-weight:600}
+html[data-estilo="pro"] .panel{border:1px solid var(--line);border-radius:16px;padding:15px;box-shadow:0 1px 2px var(--sombra),0 10px 28px -18px var(--sombra)}
+html[data-estilo="pro"] .panel-title{font-weight:600;letter-spacing:.06em}
+html[data-estilo="pro"] .hero{background:linear-gradient(160deg,var(--panel2),var(--panel) 65%)}
+html[data-estilo="pro"] .hero strong{font-family:inherit;font-weight:700;letter-spacing:-.03em}
+html[data-estilo="pro"] .metric,html[data-estilo="pro"] .card{border:1px solid var(--line);border-radius:12px}
+html[data-estilo="pro"] .row,html[data-estilo="pro"] .alloc,html[data-estilo="pro"] .param{border-top-style:solid}
+html[data-estilo="pro"] .pill{border:0;background:color-mix(in srgb,currentColor 14%,transparent);font-weight:700;padding:4px 10px}
+html[data-estilo="pro"] .badge{border:0;border-radius:6px;background:color-mix(in srgb,currentColor 14%,transparent);font-weight:700}
+html[data-estilo="pro"] .notice{border-left-width:3px;border-radius:10px}
+html[data-estilo="pro"] .bar{border:0;background:var(--panel2);height:6px}
+html[data-estilo="pro"] .bar i{background:linear-gradient(90deg,var(--acento2),var(--acento));border-radius:9px}
+html[data-estilo="pro"] .bar em{background:var(--text);width:2px;border-radius:2px}
+html[data-estilo="pro"] .chips button{border-color:var(--line)}
+html[data-estilo="pro"] .chips button.active{background:var(--suave);color:var(--acento);border-color:color-mix(in srgb,var(--acento) 45%,transparent)}
+html[data-estilo="pro"] .verd{border-width:1px;border-radius:12px;background:color-mix(in srgb,currentColor 8%,transparent)}
+html[data-estilo="pro"] .verd b{font-family:inherit;font-style:normal;font-weight:700}
+html[data-estilo="pro"] .danger-zone{border:1px solid color-mix(in srgb,var(--down) 40%,transparent);border-radius:14px;background:color-mix(in srgb,var(--down) 5%,transparent)}
+html[data-estilo="pro"] .toast{border:1px solid var(--line);border-left:3px solid var(--acento2);border-radius:12px;box-shadow:0 12px 32px -12px rgba(0,0,0,.45)}
+html[data-estilo="pro"] .toast.bad{border-left-color:var(--down)}
+html[data-estilo="pro"] .modal-backdrop{background:rgba(8,10,16,.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+html[data-estilo="pro"] .modal{border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 60px -20px rgba(0,0,0,.55)}
+html[data-estilo="pro"] .demo-banda{background:var(--suave2);color:var(--acento2);letter-spacing:.12em;font-weight:700}
+html[data-estilo="pro"] .demo-banda span{background:transparent}
+/* Bienvenida */
+html[data-estilo="pro"] #onb{background:radial-gradient(90% 45% at 50% 0%,var(--glow),transparent 70%),var(--bg)}
+html[data-estilo="pro"] .portada::before{inset:auto;left:50%;top:10px;width:240px;height:240px;margin-left:-120px;border-radius:50%;background:radial-gradient(circle,var(--suave),transparent 70%);animation:none}
+html[data-estilo="pro"] .portada svg{width:120px;height:120px;border-radius:28px;filter:drop-shadow(0 16px 30px rgba(255,79,151,.28))}
+html[data-estilo="pro"] .kanji{font-size:30px;color:var(--muted);text-shadow:none;margin-top:12px;font-weight:400}
+html[data-estilo="pro"] .portada h1{font-size:34px;letter-spacing:-.03em}
+html[data-estilo="pro"] .globo{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:16px 16px 16px 4px;font-weight:500;font-size:14.5px;box-shadow:0 10px 28px -18px var(--sombra)}
+html[data-estilo="pro"] .globo::before,html[data-estilo="pro"] .globo::after{display:none}
+html[data-estilo="pro"] .globo b{color:var(--acento)}
+html[data-estilo="pro"] .puntos i{height:4px;border-radius:4px}
+html[data-estilo="pro"] .paso.activo{animation:entraPro .3s ease-out}
+@keyframes entraPro{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+html[data-estilo="pro"] .opcion{border:1px solid var(--line);border-radius:14px}
+html[data-estilo="pro"] .opcion.sel{border-color:var(--acento);box-shadow:0 0 0 3px var(--suave)}
+html[data-estilo="pro"] .muestra{border:1px solid var(--line);border-radius:12px}
+html[data-estilo="pro"] .log-inst{border:1px solid var(--line);border-radius:12px}
+html[data-estilo="pro"] .boom{font-family:inherit;font-style:normal;font-weight:800;transform:none;letter-spacing:-.03em;background:linear-gradient(135deg,var(--acento),#9b5cff);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+/* Tutorial */
+html[data-estilo="pro"] #tuto{background:rgba(8,10,16,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+html[data-estilo="pro"] .tuto-caja{border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 70px -25px rgba(0,0,0,.6)}
+html[data-estilo="pro"] .tuto-cab{background:transparent;color:var(--text);border-bottom:1px solid var(--line);padding:12px 14px}
+html[data-estilo="pro"] .tuto-cab b{font-family:inherit;font-style:normal;font-weight:700;letter-spacing:.02em;font-size:15px}
+html[data-estilo="pro"] .tuto-cab button{border:1px solid var(--line);color:var(--muted)}
+html[data-estilo="pro"] .tuto-num{background:linear-gradient(135deg,var(--acento),#9b5cff);color:#fff;border:0;font-style:normal;font-size:19px;width:42px;height:42px}
+html[data-estilo="pro"] .req div{border:1px solid var(--line);border-radius:12px}
+html[data-estilo="pro"] .tuto-pie{border-top:1px solid var(--line)}
+/* Donaciones */
+html[data-estilo="pro"] .don-card{border:1px solid var(--line);border-radius:16px}
+html[data-estilo="pro"] .don-card .qr{border:0;border-radius:12px}
+html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
+/* Muestras de tema */
+.muestra.pro{background:radial-gradient(80% 60% at 80% 0%,rgba(124,92,255,.35),transparent 70%),#0b0d14}
+.muestra.pro-claro{background:radial-gradient(80% 60% at 80% 0%,rgba(224,51,124,.18),transparent 70%),#f5f6fa}
+.muestra.pro i,.muestra.pro-claro i{border-radius:4px}
+.muestra.pro i:nth-child(1){top:12px;background:linear-gradient(90deg,#ff4f97,#9b5cff)}.muestra.pro i:nth-child(2){top:26px;background:#38d4f0;right:24px}.muestra.pro i:nth-child(3){top:40px;background:#262b3b}
+.muestra.pro-claro i:nth-child(1){top:12px;background:linear-gradient(90deg,#e0337c,#9b5cff)}.muestra.pro-claro i:nth-child(2){top:26px;background:#0a8fb0;right:24px}.muestra.pro-claro i:nth-child(3){top:40px;background:#e2e5ee}
 </style>
 </head>
 <body>
@@ -263,6 +361,8 @@ html[data-tema="noche"] .tuto-caja{border-color:#fff}
     <h2>Elige tu interfaz</h2>
     <p class="ayuda">Podrás cambiarla cuando quieras en Config.</p>
     <div class="opciones" id="temas">
+      <button class="opcion" data-tema="pro"><span class="muestra pro"><i></i><i></i><i></i></span><span><b>Pro Grafito</b><small>Oscuro y limpio, con un toque de color. Recomendado.</small></span></button>
+      <button class="opcion" data-tema="pro-claro"><span class="muestra pro-claro"><i></i><i></i><i></i></span><span><b>Pro Porcelana</b><small>Claro y profesional, ideal a plena luz del día.</small></span></button>
       <button class="opcion" data-tema="noche"><span class="muestra noche"><i></i><i></i><i></i></span><span><b>Neón Noche</b><small>Manga cyberpunk oscuro: tramas, neón rosa y cian.</small></span></button>
       <button class="opcion" data-tema="dia"><span class="muestra dia"><i></i><i></i><i></i></span><span><b>Neón Día</b><small>Manga en papel claro: tinta negra y acentos neón.</small></span></button>
       <button class="opcion" data-tema="clasica"><span class="muestra clasica"><i></i><i></i><i></i></span><span><b>Clásica</b><small>La interfaz de terminal de TradBot, verde y sobria.</small></span></button>
@@ -466,7 +566,7 @@ html[data-tema="noche"] .tuto-caja{border-color:#fff}
   <div class="section-head"><div><span class="eyebrow"><span class="kata">設定</span>AJUSTES</span><h2>Config</h2></div></div>
   <div class="panel">
     <div class="panel-title"><span>Interfaz</span></div>
-    <div class="chips" id="temaChips"><button data-tema="noche">NEÓN NOCHE</button><button data-tema="dia">NEÓN DÍA</button><button data-tema="clasica">CLÁSICA</button></div>
+    <div class="chips" id="temaChips"><button data-tema="pro">PRO GRAFITO</button><button data-tema="pro-claro">PRO PORCELANA</button><button data-tema="noche">NEÓN NOCHE</button><button data-tema="dia">NEÓN DÍA</button><button data-tema="clasica">CLÁSICA</button></div>
     <div class="grid two" style="margin-top:8px"><button id="verBienvenida" class="small ghost">VER BIENVENIDA</button><button class="small ghost" data-tuto="0">📖 TUTORIAL</button></div>
   </div>
   <div class="panel">
@@ -537,7 +637,7 @@ html[data-tema="noche"] .tuto-caja{border-color:#fff}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.0.2';
+var APP_VERSION='1.1.0';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -549,11 +649,11 @@ function guardarS(){try{localStorage.setItem('kumo',JSON.stringify(S))}catch(e){
 var datos={estado:null,ops:[],radar:null,config:null,rangos:null};
 
 // ---------------------------------------------------------------- Tema
-var COLOR_BARRA={noche:['#0d0718',false],dia:['#fff7ea',true],clasica:['#0a0f0d',false]};
+var COLOR_BARRA={pro:['#0b0d14',false],'pro-claro':['#f5f6fa',true],noche:['#0d0718',false],dia:['#fff7ea',true],clasica:['#0a0f0d',false]};
 function aplicarTema(t){
-  if(!COLOR_BARRA[t])t='noche';
+  if(!COLOR_BARRA[t])t='pro';
   S.tema=t;guardarS();
-  var h=document.documentElement;h.setAttribute('data-tema',t);h.setAttribute('data-estilo',t==='clasica'?'clasica':'manga');
+  var h=document.documentElement;h.setAttribute('data-tema',t);h.setAttribute('data-estilo',t==='clasica'?'clasica':/^pro/.test(t)?'pro':'manga');
   var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=COLOR_BARRA[t][0];
   if(NATIVO&&NATIVO.barras)try{NATIVO.barras(COLOR_BARRA[t][0],COLOR_BARRA[t][1])}catch(e){}
   document.querySelectorAll('[data-tema]').forEach(function(b){if(b!==h)b.classList.toggle(b.classList.contains('opcion')?'sel':'active',b.getAttribute('data-tema')===t)});
@@ -1205,7 +1305,7 @@ function iniciarApp(){
   if(!S.url&&!S.demo){conn(false,'SIN NUBE');return}
   cargarEstado();refresco=setInterval(function(){if(!document.hidden)cargarEstado()},60000);
 }
-aplicarTema(S.tema||'noche');
+aplicarTema(S.tema||'pro');
 $('appVer').textContent='v'+APP_VERSION;
 if(!S.onb||(!S.url&&!S.demo)){abrirOnb('hola');if(!S.tuto)abrirTuto(0)}else iniciarApp();
 window.__kumo={tuto:function(){return tutoI},S:S,datos:datos,irPaso:irPaso,irA:irA,W:function(){return W}};
