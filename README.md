@@ -47,7 +47,8 @@ mantiene este repositorio.
 
 - **GitHub Actions** (repo privado): 2.000 min/mes. Un ciclo cada 30 min usa ~1.440.
 - **Cloudflare Workers/KV**: ~50 escrituras al día por usuario, muy por debajo del límite.
-- **Binance, Bybit, OKX, KuCoin y Bitget** bloquean los servidores de EE. UU. donde corre GitHub Actions: con ellos el ciclo puede fallar.
+- **Binance, Bybit, OKX, KuCoin y Bitget** bloquean los servidores de EE. UU. donde corre GitHub Actions, por eso la app ya no los ofrece.
+- **Sin KYC:** Hyperliquid (DEX: te conectas con dirección + clave de una *API wallet* que puede operar pero no retirar; orden mínima 10 USDC) y MEXC (cuenta sin verificar con límite de retiro).
 
 ## Seguridad
 

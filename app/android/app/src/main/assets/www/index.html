@@ -355,7 +355,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
       <span class="eyebrow">クモ · TRADING CRIPTO EN TU PROPIA NUBE</span>
     </div>
     <div class="globo">¡Hola! Soy <b>Kumo</b> ☁️ Opero cripto por ti, 24/7, desde <b>tu propia nube</b> y con <b>tus reglas</b>. Vengo vacío: empiezo a funcionar cuando conectes <b>tus</b> cuentas y claves.</div>
-    <div class="ayuda">Proyecto abierto y gratuito. Funciona con Crypto.com, Kraken, Coinbase, Binance y más de 100 exchanges. Empieza siempre en <b>simulación</b>: nada de dinero real hasta que tú lo actives.</div>
+    <div class="ayuda">Proyecto abierto y gratuito. Funciona con Crypto.com, Kraken, Coinbase, MEXC, Hyperliquid (sin KYC) y más. Empieza siempre en <b>simulación</b>: nada de dinero real hasta que tú lo actives.</div>
     <div class="onb-pie" style="grid-template-columns:1fr"><button class="primary" data-ir="tema">EMPEZAR ▶</button><button class="ghost small" data-tuto="0">📖 VER TUTORIAL</button></div>
   </section>
 
@@ -449,8 +449,8 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
       <label class="check"><input type="checkbox" id="exSinClaves"> Empezar sin claves (solo simulación con precios reales)</label>
       <div id="exClaves" class="form">
         <div class="notice warn">Crea la clave <b>solo con permiso de lectura y trading. NUNCA con retiros.</b> Se guarda cifrada en tu GitHub y solo la usa tu bot.</div>
-        <label>API key<input id="exKey" type="password" autocomplete="off"></label>
-        <label>Secret<input id="exSecret" type="password" autocomplete="off"></label>
+        <label><span id="exKeyT">API key</span><input id="exKey" type="password" autocomplete="off"></label>
+        <label><span id="exSecretT">Secret</span><small id="exSecretA">El secret es obligatorio: firma cada orden. Se muestra una sola vez al crear la clave.</small><input id="exSecret" type="password" autocomplete="off"></label>
         <label id="exPassL" class="oculto">Passphrase<input id="exPass" type="password" autocomplete="off"></label>
       </div>
       <div id="exValida" class="valida"></div>
@@ -591,7 +591,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
       <div class="grid two"><button id="verToken" class="small">MOSTRAR TOKEN</button><button id="copiarToken" class="small">COPIAR</button></div>
     </div>
     <div id="repoInfo" class="notice" style="margin-top:9px">—</div>
-    <div class="grid two" style="margin-top:9px"><button id="cambiarClaves">CAMBIAR CLAVES</button><button id="actualizarNube">REINSTALAR NUBE</button></div>
+    <div class="grid two" style="margin-top:9px"><button id="cambiarClaves">CAMBIAR CLAVES</button><button id="actualizarNube">ACTUALIZAR NUBE</button></div>
     <button id="olvidarGh" class="small ghost" style="margin-top:8px;width:100%">OLVIDAR TOKEN DE GITHUB EN ESTE TELÉFONO</button>
   </div>
   <div class="panel">
@@ -643,7 +643,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.1.1';
+var APP_VERSION='1.2.0';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -811,13 +811,10 @@ var EXCHANGES=[
   {id:'kraken',n:'Kraken',q:['USD','USDT','EUR'],nota:'Kraken → Settings → API. Permisos: Query Funds, Query Orders, Create & Modify Orders.'},
   {id:'coinbase',n:'Coinbase Advanced',q:['USDC','USD'],nota:'Coinbase Developer Platform → API key «Trade». API key = nombre de la clave; Secret = clave privada completa.'},
   {id:'bitstamp',n:'Bitstamp',q:['USD','USDT','EUR'],nota:'Bitstamp → Settings → API Access. Activa solo balance y trading.'},
-  {id:'mexc',n:'MEXC',q:['USDT'],nota:'MEXC → API Management. Activa solo Spot trading.'},
+  {id:'hyperliquid',n:'Hyperliquid (sin KYC · DEX)',q:['USDC'],k:'Dirección de tu cuenta (0x…)',s:'Clave privada de la API wallet',
+   nota:'Sin KYC: te conectas con una billetera, no con tus datos. En app.hyperliquid.xyz → More → API crea una «API wallet»: puede operar pero NO retirar. Pega aquí la dirección de tu cuenta principal y la clave privada de esa API wallet. Orden mínima: 10 USDC.'},
+  {id:'mexc',n:'MEXC (sin KYC)',q:['USDT'],nota:'MEXC permite abrir cuenta y operar sin verificar identidad (los retiros sin KYC tienen límite diario). MEXC → API Management: activa solo Spot trading, sin retiros.'},
   {id:'gate',n:'Gate',q:['USDT'],nota:'Gate → API Management. Permiso Spot trade, sin retiros.'},
-  {id:'binance',n:'Binance',q:['USDT','USDC'],nota:'⚠ Binance bloquea los servidores de EE. UU. donde corre GitHub: probablemente no funcionará en la nube.',bloq:1},
-  {id:'bybit',n:'Bybit',q:['USDT','USDC'],nota:'⚠ Bybit bloquea servidores de EE. UU. (GitHub): probablemente no funcionará en la nube.',bloq:1},
-  {id:'okx',n:'OKX',q:['USDT','USDC'],pass:1,nota:'⚠ OKX bloquea servidores de EE. UU. (GitHub): probablemente no funcionará en la nube.',bloq:1},
-  {id:'kucoin',n:'KuCoin',q:['USDT','USDC'],pass:1,nota:'⚠ KuCoin restringe EE. UU. (GitHub): puede fallar en la nube.',bloq:1},
-  {id:'bitget',n:'Bitget',q:['USDT','USDC'],pass:1,nota:'⚠ Bitget restringe EE. UU. (GitHub): puede fallar en la nube.',bloq:1},
   {id:'otro',n:'Otro (id de ccxt)',q:['USDT','USDC','USD','EUR'],nota:'Kumo usa ccxt: escribe el id del exchange tal como aparece en ccxt.'}
 ];
 $('exId').innerHTML=EXCHANGES.map(function(x){return '<option value="'+x.id+'">'+esc(x.n)+'</option>'}).join('');
@@ -827,13 +824,16 @@ function pintarExchange(){
   var q=$('exQuote').value;$('exQuote').innerHTML=x.q.map(function(c){return '<option'+(c===q?' selected':'')+'>'+c+'</option>'}).join('');
   $('exOtroL').classList.toggle('oculto',x.id!=='otro');$('exPassL').classList.toggle('oculto',!x.pass&&x.id!=='otro');
   $('exClaves').classList.toggle('oculto',$('exSinClaves').checked);
+  $('exKeyT').textContent=x.k||'API key';$('exSecretT').textContent=x.s||'Secret';
 }
 $('exId').onchange=pintarExchange;$('exSinClaves').onchange=pintarExchange;
 $('exSig').onclick=function(){
   var x=exSel(),v=$('exValida'),id=x.id==='otro'?$('exOtro').value.trim().toLowerCase():x.id;
   if(!/^[a-z0-9_]{2,30}$/.test(id)){v.className='valida bad';v.textContent='Escribe un id de ccxt válido';return}
   var sin=$('exSinClaves').checked,k=$('exKey').value.trim(),s=$('exSecret').value.trim();
-  if(!sin&&(!k||!s)){v.className='valida bad';v.textContent='Faltan API key y secret (o marca «Empezar sin claves»)';return}
+  if(!sin&&(!k||!s)){v.className='valida bad';v.textContent=!k?'Falta la API key (o marca «Empezar sin claves»)':'Falta el secret: sin él el exchange rechaza todo (401). Si no lo guardaste, crea una clave nueva.';return}
+  if(x.id==='hyperliquid'&&(!/^0x[0-9a-fA-F]{40}$/.test(k)||!/^(0x)?[0-9a-fA-F]{64}$/.test(s))){v.className='valida bad';v.textContent='Hyperliquid: la dirección es 0x + 40 caracteres y la clave privada 64 caracteres hexadecimales';return}
+  if(k===s){v.className='valida bad';v.textContent='La API key y el secret son iguales: revisa que pegaste el secret';return}
   W.ex={id:id,nombre:x.n,quote:$('exQuote').value,key:sin?'':k,secret:sin?'':s,pass:sin?'':$('exPass').value.trim()};
   v.textContent='';irPaso('resumen');
 };
@@ -950,7 +950,7 @@ $('instalar').onclick=function(){
       S.url=url;S.token=appToken;S.demo=false;S.exchange=W.ex.nombre;guardarS();if(NATIVO&&NATIVO.config)NATIVO.config(url,appToken);});
   }).then(function(){
     var l=logI('Configurando la moneda base y lanzando el primer ciclo…');
-    return api('/api/config',{quote:W.ex.quote}).then(function(){return lanzarWorkflow(owner,repo,'ciclo.yml',rama)}).then(function(){l.className='ok';l.textContent='Primer ciclo en marcha (tarda 1-2 min)'});
+    return api('/api/config',W.ex.id==='hyperliquid'?{quote:W.ex.quote,monto_min:11,monto_max:30}:{quote:W.ex.quote}).then(function(){return lanzarWorkflow(owner,repo,'ciclo.yml',rama)}).then(function(){l.className='ok';l.textContent='Primer ciclo en marcha (tarda 1-2 min)'});
   }).then(function(){
     logI('¡Despegue completado!','ok');W={};
     ['ghToken','cfToken','groqKey','exKey','exSecret','exPass'].forEach(function(i){$(i).value=''});
@@ -1226,10 +1226,39 @@ $('cambiarClaves').onclick=function(){
   W={};if(S.gh&&S.gh.repo)$('repoNombre').value=S.gh.repo;
   abrirOnb('gh','claves');toast('Valida GitHub y cambia solo lo que necesites');
 };
+// Tu repo es una copia de la plantilla: este paso le trae el código nuevo (runner, worker y
+// workflows) en un solo commit y vuelve a desplegar. No toca kumo.json ni tus secretos.
+var RUTAS_NUBE=/^(runner\/|worker\/|\.github\/workflows\/)/;
+function actualizarCodigoNube(owner,repo,rama,aviso){
+  var dest='/repos/'+owner+'/'+repo,orig='/repos/'+PLANTILLA,refPl,tree,base,cambios=[];
+  aviso('Leyendo la plantilla…');
+  return gh('GET',orig).then(function(r){okGh(r,'Plantilla');refPl=r.data.default_branch||'main';
+    return gh('GET',orig+'/git/trees/'+refPl+'?recursive=1')}).then(function(r){okGh(r,'Archivos de la plantilla');tree=r.data.tree.filter(function(x){return x.type==='blob'&&RUTAS_NUBE.test(x.path)});
+    return gh('GET',dest+'/git/ref/heads/'+rama)}).then(function(r){okGh(r,'Tu repositorio');base=r.data.object.sha;
+    return gh('GET',dest+'/git/trees/'+base+'?recursive=1')}).then(function(r){okGh(r,'Tus archivos');
+    var mios={};r.data.tree.forEach(function(x){mios[x.path]=x.sha});
+    // mismo sha de blob = mismo contenido: solo se copian los archivos que cambiaron
+    var pend=tree.filter(function(x){return mios[x.path]!==x.sha});
+    if(!pend.length)return null;
+    var i=0;
+    function sig(){
+      if(i>=pend.length)return Promise.resolve();
+      var x=pend[i++];aviso('Copiando '+x.path+' ('+i+'/'+pend.length+')');
+      return gh('GET',orig+'/git/blobs/'+x.sha).then(function(b){okGh(b,x.path);
+        return gh('POST',dest+'/git/blobs',{content:String(b.data.content).replace(/\s/g,''),encoding:'base64'})}).then(function(b){okGh(b,'Guardar '+x.path);cambios.push({path:x.path,mode:x.mode,type:'blob',sha:b.data.sha});return sig()});
+    }
+    return sig().then(function(){return gh('POST',dest+'/git/trees',{base_tree:base,tree:cambios})}).then(function(r){okGh(r,'Árbol');
+      return gh('POST',dest+'/git/commits',{message:'Actualizar Kumo desde '+PLANTILLA+' ('+cambios.length+' archivos)',tree:r.data.sha,parents:[base]})}).then(function(r){okGh(r,'Commit');
+      return gh('PATCH',dest+'/git/refs/heads/'+rama,{sha:r.data.sha})}).then(function(r){okGh(r,'Subir cambios');return cambios.length});
+  });
+}
 $('actualizarNube').onclick=function(){
   if(!S.gh||!S.gh.token){toast('Necesitas el token de GitHub: toca «Cambiar claves»',true);return}
-  confirmar('Reinstalar nube','Vuelve a desplegar tu nube en Cloudflare con tus secretos actuales. Tus datos y tu configuración se conservan.','REINSTALAR').then(function(ok){
-    if(!ok)return;lanzarWorkflow(S.gh.owner,S.gh.repo,'instalar.yml',S.gh.rama||'main').then(function(){toast('Reinstalación lanzada (2-4 min)')}).catch(function(e){toast(traduce(e),true)});
+  confirmar('Actualizar nube','Copia a tu repositorio el código más reciente de Kumo (bot, nube y ciclos) y vuelve a desplegar tu nube. Tus claves, datos y ajustes se conservan.','ACTUALIZAR').then(function(ok){
+    if(!ok)return;var b=$('actualizarNube');b.disabled=true;
+    actualizarCodigoNube(S.gh.owner,S.gh.repo,S.gh.rama||'main',function(t){b.textContent=t.length>28?t.slice(0,27)+'…':t}).then(function(n){
+      return lanzarWorkflow(S.gh.owner,S.gh.repo,'instalar.yml',S.gh.rama||'main').then(function(){toast((n?n+' archivos actualizados. ':'Tu código ya estaba al día. ')+'Redesplegando la nube (2-4 min)')});
+    }).catch(function(e){toast(traduce(e),true)}).then(function(){b.disabled=false;b.textContent='ACTUALIZAR NUBE'});
   });
 };
 $('olvidarGh').onclick=function(){if(S.gh){delete S.gh.token;guardarS();pintarConfig();toast('Token de GitHub borrado de este teléfono')}};
@@ -1321,7 +1350,7 @@ function pintarUpd(){
 function ofrecerUpd(){
   var u=S.upd;if(!u)return;
   var notas=document.createElement('div');notas.className='upd-notas';notas.textContent=(u.notas||'Sin notas.').replace(/\*\*/g,'').slice(0,1500);
-  confirmar('Nueva versión '+u.tag,'Tienes v'+APP_VERSION+'. Descarga la APK e instálala encima: conservas tu nube, tu token y tus ajustes.','⬇ DESCARGAR',notas.outerHTML).then(function(ok){
+  confirmar('Nueva versión '+u.tag,'Tienes v'+APP_VERSION+'. Descarga la APK e instálala encima: conservas tu nube, tu token y tus ajustes. Después toca Config → Actualizar nube para traer también las mejoras del bot.','⬇ DESCARGAR',notas.outerHTML).then(function(ok){
     S.updVisto=u.tag;guardarS();if(ok)abrirUrl(u.apk||u.url);
   });
 }

@@ -25,6 +25,7 @@ import ccxt
 
 # Exchanges que bloquean los servidores de EE. UU. donde corre GitHub Actions.
 BLOQUEAN_EEUU = {"binance", "bybit", "okx", "bitget", "kucoin"}
+BILLETERA = {"hyperliquid"}  # se conectan con dirección + clave privada en vez de API key
 
 
 class ErrorExchange(Exception):
@@ -38,12 +39,26 @@ def _f(x, defecto=0.0):
         return defecto
 
 
+def _cambio(t, precio):
+    """% en 24 h; Hyperliquid no lo da en el ticker, pero sí el precio de ayer (prevDayPx)."""
+    if t.get("percentage") is not None:
+        return _f(t.get("percentage"))
+    previo = _f(t.get("open")) or _f((t.get("info") or {}).get("prevDayPx"))
+    return (precio / previo - 1) * 100 if previo > 0 else 0.0
+
+
 class CcxtExchange:
     def __init__(self, exchange_id, quote="USDT", api_key="", secret="", password="", par_quote=None):
         if exchange_id not in ccxt.exchanges:
             raise ErrorExchange(f"Exchange «{exchange_id}» no existe en ccxt")
         opciones = {"enableRateLimit": True, "timeout": 20000}
-        if api_key:
+        if exchange_id in BILLETERA:
+            # DEX sin KYC: «API key» = dirección de la cuenta (0x…), «secret» = clave
+            # privada de una API wallet (agente que opera pero no puede retirar).
+            opciones["options"] = {"defaultType": "spot"}
+            if api_key:
+                opciones.update({"walletAddress": api_key.strip(), "privateKey": secret.strip()})
+        elif api_key:
             opciones.update({"apiKey": api_key, "secret": secret})
         if password:
             opciones["password"] = password
@@ -96,7 +111,7 @@ class CcxtExchange:
         for par, t in tickers.items():
             precio = _f(t.get("last") or t.get("close"))
             if precio > 0:
-                out[par.split("/")[0]] = {"precio": precio, "cambio_24h": _f(t.get("percentage")), "volumen": _f(t.get("quoteVolume"))}
+                out[par.split("/")[0]] = {"precio": precio, "cambio_24h": _cambio(t, precio), "volumen": _f(t.get("quoteVolume"))}
         return out
 
     def velas(self, simbolo, marco="1h", n=100):
@@ -122,7 +137,7 @@ class CcxtExchange:
             precio = _f(t.get("last"))
             if vol <= 0 or precio <= 0:
                 continue
-            filas.append({"simbolo": base, "precio": precio, "cambio_24h": round(_f(t.get("percentage")), 2), "volumen": round(vol)})
+            filas.append({"simbolo": base, "precio": precio, "cambio_24h": round(_cambio(t, precio), 2), "volumen": round(vol)})
         filas.sort(key=lambda f: -f["volumen"])
         return filas[:n]
 
@@ -138,7 +153,10 @@ class CcxtExchange:
             precio = _f(self.ex.fetch_ticker(par).get("last"))
             if precio <= 0:
                 raise ErrorExchange(f"Sin precio para {par}")
-            if self.ex.has.get("createMarketBuyOrderWithCost"):
+            if self.id in BILLETERA:
+                # Hyperliquid no tiene órdenes a mercado puras: necesita el precio para el deslizamiento máximo.
+                o = self.ex.create_order(par, "market", "buy", self._ajustar(par, monto_quote / precio), precio)
+            elif self.ex.has.get("createMarketBuyOrderWithCost"):
                 o = self.ex.create_market_buy_order_with_cost(par, monto_quote)
             else:
                 o = self.ex.create_market_buy_order(par, self._ajustar(par, monto_quote / precio))
@@ -150,7 +168,10 @@ class CcxtExchange:
         par = self._par(simbolo)
         try:
             precio = _f(self.ex.fetch_ticker(par).get("last"))
-            o = self.ex.create_market_sell_order(par, self._ajustar(par, cantidad))
+            if self.id in BILLETERA:
+                o = self.ex.create_order(par, "market", "sell", self._ajustar(par, cantidad), precio)
+            else:
+                o = self.ex.create_market_sell_order(par, self._ajustar(par, cantidad))
         except ccxt.BaseError as e:
             raise ErrorExchange(_explicar(self.id, e))
         return _resultado(o, precio)
@@ -170,7 +191,7 @@ def _explicar(exchange_id, error):
     texto = str(error)
     if exchange_id in BLOQUEAN_EEUU and re.search(r"451|403|restricted|not available|CloudFront", texto, re.I):
         return (f"{exchange_id} bloquea los servidores de EE. UU. donde corre GitHub Actions. "
-                "Usa otro exchange (Kraken, Coinbase, Crypto.com, MEXC, Bitstamp) o un runner propio.")
+                "Usa otro exchange (Kraken, Coinbase, Crypto.com, MEXC, Hyperliquid, Bitstamp) o un runner propio.")
     if isinstance(error, ccxt.AuthenticationError):
         return f"{exchange_id}: claves rechazadas. Revisa API key, secret y permisos de trading."
     if isinstance(error, ccxt.InsufficientFunds):
@@ -211,7 +232,9 @@ class CryptoComApp:
             except ValueError:
                 datos = {}
             if e.code == 401:
-                raise ErrorExchange("Crypto.com App: claves rechazadas (401)")
+                raise ErrorExchange("Crypto.com App: claves rechazadas (401). La firma usa el secret: si no lo tienes "
+                                    "o no corresponde a esa API key, borra la clave en la App y crea una nueva "
+                                    "(el secret solo se muestra una vez). Luego cámbiala en Config → Cambiar claves.")
             raise ErrorExchange(f"Crypto.com App HTTP {e.code}: {datos.get('error_message') or datos.get('error') or ''}")
         if not datos.get("ok", False):
             raise ErrorExchange(f"Crypto.com App: {datos.get('error_message') or datos.get('error') or 'error'}")
