@@ -222,6 +222,9 @@ html[data-tema="noche"] .tuto-caja{border-color:#fff}
 .don-card .qr{width:168px;height:168px;background:#fff;padding:6px;border-radius:4px;border:2px solid var(--tinta)}
 .dir{display:block;font:11px/1.45 ui-monospace,Menlo,monospace;word-break:break-all;background:var(--bg);border:1px dashed var(--line);border-radius:4px;padding:7px;margin:8px 0;user-select:all;-webkit-user-select:all}
 @media(min-width:560px){.don{grid-template-columns:1fr 1fr}}
+.upd-banda{display:block;width:100%;border:0;border-radius:0;background:var(--acento);color:var(--sobre-acento);font-size:12px;font-weight:800;letter-spacing:.04em;padding:9px 12px;text-align:center}
+html[data-estilo="pro"] .upd-banda{background:linear-gradient(90deg,var(--acento),#9b5cff);border-radius:0;border:0}
+.upd-notas{font-size:12px;line-height:1.5;white-space:pre-line;max-height:38vh;overflow:auto;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px;margin-top:10px}
 
 /* ============ Estilo Pro (Grafito / Porcelana) ============ */
 html[data-tema="pro"]{
@@ -489,6 +492,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 </div>
 
 <!-- ====================== APP ====================== -->
+<button id="updBanda" class="upd-banda oculto"></button>
 <div id="demoBanda" class="demo-banda oculto"><span>MODO DEMO · DATOS DE EJEMPLO</span></div>
 <header class="topbar">
   <div class="marca"><svg viewBox="0 0 108 108" aria-hidden="true"><use href="#logo"/></svg><div><span class="eyebrow" id="topEx">TU NUBE</span><h1 class="logo-txt">KUMO</h1></div></div>
@@ -594,6 +598,8 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
     <div class="panel-title"><span>Acerca de</span></div>
     <div class="grid two"><div class="metric"><span>App</span><b id="appVer">—</b></div><div class="metric"><span>Nube</span><b id="nubeVer2">—</b></div></div>
     <p class="notice">Kumo Bot es software libre (MIT). Código: <a href="#" data-url="https://github.com/tradiabot/kumo-bot">github.com/tradiabot/kumo-bot</a>. Trading con riesgo: usa solo dinero que puedas perder.</p>
+    <div class="grid two" style="margin-top:9px"><button class="small" id="buscarUpd">BUSCAR ACTUALIZACIÓN</button><button class="small ghost" id="verNovedades">NOVEDADES</button></div>
+    <small id="updEstado" style="display:block;margin-top:6px">—</small>
     <button class="small secundario" id="irDonar" style="margin-top:9px;width:100%">☕ DONAR AL DESARROLLADOR</button>
   </div>
   <div class="panel" id="donar">
@@ -637,7 +643,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.1.0';
+var APP_VERSION='1.1.1';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -914,7 +920,12 @@ $('instalar').onclick=function(){
       okGh(r,'Crear repositorio desde '+plantilla);rama=r.data.default_branch||'main';
       l1.textContent='Repositorio privado '+owner+'/'+repo+' creado';l1.className='ok';
       var l=logI('Esperando a que GitHub copie los archivos…'),n=0;
-      function listo(){return gh('GET','/repos/'+owner+'/'+repo+'/contents/.github/workflows/instalar.yml').then(function(r){if(r.status===200){l.className='ok';l.textContent='Archivos listos';return}if(n++>30)throw new Error('GitHub no terminó de copiar la plantilla');return espera(3000).then(listo)})}
+      // Con el token recién validado: S.gh aún no existe y sin token el repo privado da 404.
+      function listo(){return gh('GET','/repos/'+owner+'/'+repo+'/contents/.github/workflows/instalar.yml?ref='+rama,null,W.gh.token).then(function(r){
+        if(r.status===200){l.className='ok';l.textContent='Archivos listos';return}
+        if(r.status===401||r.status===403)okGh(r,'Leer el repositorio nuevo');
+        if(n++>40)throw new Error('GitHub no terminó de copiar la plantilla en 2 min. Toca Reintentar.');
+        l.textContent='Esperando a que GitHub copie los archivos… ('+n*3+' s)';return espera(3000).then(listo)})}
       return listo();
     });
   }).then(function(){
@@ -1297,16 +1308,54 @@ var DEMO=(function(){
   }};
 })();
 
+// ================================================================ Actualizaciones
+// Consulta el último release público de la plantilla (sin token) cada 6 h como mucho.
+var REPO_APP='tradiabot/kumo-bot';
+function cmpVer(a,b){a=String(a).replace(/^v/,'').split('.');b=String(b).replace(/^v/,'').split('.');for(var i=0;i<3;i++){var d=(+a[i]||0)-(+b[i]||0);if(d)return d>0?1:-1}return 0}
+function pintarUpd(){
+  var u=S.upd,hay=u&&cmpVer(u.tag,APP_VERSION)>0;
+  $('updBanda').classList.toggle('oculto',!hay);
+  if(hay)$('updBanda').textContent='⬆ NUEVA VERSIÓN '+u.tag+' DISPONIBLE · TOCA PARA ACTUALIZAR';
+  $('updEstado').textContent=!u?'Aún no se ha buscado.':hay?'Hay una versión nueva: '+u.tag:'Tienes la última versión ('+'v'+APP_VERSION+'). Revisado '+new Date(u.ts).toLocaleString();
+}
+function ofrecerUpd(){
+  var u=S.upd;if(!u)return;
+  var notas=document.createElement('div');notas.className='upd-notas';notas.textContent=(u.notas||'Sin notas.').replace(/\*\*/g,'').slice(0,1500);
+  confirmar('Nueva versión '+u.tag,'Tienes v'+APP_VERSION+'. Descarga la APK e instálala encima: conservas tu nube, tu token y tus ajustes.','⬇ DESCARGAR',notas.outerHTML).then(function(ok){
+    S.updVisto=u.tag;guardarS();if(ok)abrirUrl(u.apk||u.url);
+  });
+}
+// No interrumpe el tutorial ni el asistente: avisa al entrar a la app.
+function libreParaAvisar(){return !$('tuto').classList.contains('open')&&!$('onb').classList.contains('open')&&!$('modal').classList.contains('open')}
+function buscarActualizacion(manual){
+  if(!manual&&S.upd&&Date.now()-S.upd.ts<6*3600000){pintarUpd();if(cmpVer(S.upd.tag,APP_VERSION)>0&&S.updVisto!==S.upd.tag&&libreParaAvisar())ofrecerUpd();return Promise.resolve()}
+  if(manual)$('updEstado').textContent='Buscando…';
+  return fetch('https://api.github.com/repos/'+REPO_APP+'/releases/latest',{headers:{Accept:'application/vnd.github+json'}}).then(function(r){
+    if(!r.ok)throw new Error('GitHub respondió HTTP '+r.status);return r.json();
+  }).then(function(d){
+    var apk=(d.assets||[]).filter(function(a){return /\.apk$/i.test(a.name)})[0];
+    S.upd={tag:d.tag_name,notas:d.body||'',url:d.html_url,apk:apk&&apk.browser_download_url,ts:Date.now()};guardarS();pintarUpd();
+    var hay=cmpVer(S.upd.tag,APP_VERSION)>0;
+    if(hay&&(manual||(S.updVisto!==S.upd.tag&&libreParaAvisar())))ofrecerUpd();
+    else if(manual&&!hay)toast('Tienes la última versión (v'+APP_VERSION+')');
+  }).catch(function(e){if(manual){$('updEstado').textContent='No pude revisar: '+e.message;toast('No pude buscar actualizaciones',true)}});
+}
+$('updBanda').onclick=ofrecerUpd;
+$('buscarUpd').onclick=function(){buscarActualizacion(true)};
+$('verNovedades').onclick=function(){abrirUrl('https://github.com/'+REPO_APP+'/releases')};
+
 // ================================================================ Arranque
 var refresco;
 function iniciarApp(){
   $('demoBanda').classList.toggle('oculto',!S.demo);
   clearInterval(refresco);
   if(!S.url&&!S.demo){conn(false,'SIN NUBE');return}
+  buscarActualizacion(false);
   cargarEstado();refresco=setInterval(function(){if(!document.hidden)cargarEstado()},60000);
 }
 aplicarTema(S.tema||'pro');
 $('appVer').textContent='v'+APP_VERSION;
+setTimeout(function(){buscarActualizacion(false)},2500);
 if(!S.onb||(!S.url&&!S.demo)){abrirOnb('hola');if(!S.tuto)abrirTuto(0)}else iniciarApp();
 window.__kumo={tuto:function(){return tutoI},S:S,datos:datos,irPaso:irPaso,irA:irA,W:function(){return W}};
 })();

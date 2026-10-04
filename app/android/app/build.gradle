@@ -8,8 +8,8 @@ android {
         applicationId "com.kumobot.app"
         minSdkVersion 23
         targetSdkVersion 34
-        versionCode 110
-        versionName "1.1.0"
+        versionCode 111
+        versionName "1.1.1"
         multiDexEnabled true
     }
 
