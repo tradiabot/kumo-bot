@@ -2,7 +2,8 @@
 """Un ciclo de Kumo Bot: lee la config de tu nube, decide, opera y reporta.
 
 Variables de entorno (secretos de tu repositorio de GitHub):
-  KUMO_RUNNER_TOKEN, GROQ_API_KEY, EXCHANGE_ID, EXCHANGE_API_KEY,
+  KUMO_RUNNER_TOKEN, IA_URL, IA_MODELOS, IA_CLAVE (o GROQ_API_KEY en nubes viejas),
+  EXCHANGE_ID, EXCHANGE_API_KEY,
   EXCHANGE_SECRET, EXCHANGE_PASSWORD (opcional). La URL de la nube se lee de
   kumo.json (lo escribe el workflow de instalación) o de KUMO_URL.
 """

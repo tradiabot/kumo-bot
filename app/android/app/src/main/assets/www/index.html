@@ -425,17 +425,20 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
     <div class="onb-pie"><button data-ir="gh">◀</button><button class="primary" id="cfSig">VALIDAR ▶</button></div>
   </section>
 
-  <section class="paso" data-paso="groq">
-    <span class="eyebrow"><span class="kata">エーアイ</span>NUBE 3/5 · IA GROQ</span>
-    <h2>Tu IA (Groq)</h2>
-    <div class="globo">Con Groq reviso cada operación con IA antes de ejecutarla y analizo monedas en el Radar. Es gratis.</div>
-    <div class="ayuda"><ol>
-      <li>Entra a <a href="#" data-url="https://console.groq.com/keys">GROQ KEYS</a> con tu cuenta de Google o correo.</li>
-      <li><b>Create API Key</b>, copia la clave (empieza por <code>gsk_</code>) y pégala.</li>
-    </ol>Opcional: sin IA el bot opera solo con reglas técnicas.</div>
-    <div class="form" style="margin-top:10px"><label>Clave de Groq<input id="groqKey" type="password" autocomplete="off" placeholder="gsk_…"></label><div id="groqValida" class="valida"></div></div>
-    <div class="onb-pie"><button data-ir="cf">◀</button><button class="primary" id="groqSig">VALIDAR ▶</button></div>
-    <button class="ghost small" id="groqSaltar" style="margin-top:8px">SEGUIR SIN IA</button>
+  <section class="paso" data-paso="ia">
+    <span class="eyebrow"><span class="kata">エーアイ</span>NUBE 3/5 · IA</span>
+    <h2>Tu IA</h2>
+    <div class="globo">Con IA reviso cada operación antes de ejecutarla y analizo monedas en el Radar. Todas estas opciones son gratis.</div>
+    <div class="form" style="margin-top:10px">
+      <label>Proveedor de IA<select id="iaProv"></select></label>
+      <p id="iaNota" class="ayuda"></p>
+      <label id="iaUrlL" class="oculto">URL base (termina en /v1)<input id="iaUrl" autocomplete="off" placeholder="https://…/v1"></label>
+      <label id="iaModeloL" class="oculto">Modelo<input id="iaModelo" autocomplete="off" placeholder="id del modelo"></label>
+      <label id="iaKeyL">Clave<input id="iaKey" type="password" autocomplete="off"></label>
+      <div id="iaValida" class="valida"></div>
+    </div>
+    <div class="onb-pie"><button data-ir="cf">◀</button><button class="primary" id="iaSig">VALIDAR ▶</button></div>
+    <button class="ghost small" id="iaSaltar" style="margin-top:8px">SEGUIR SIN IA</button>
   </section>
 
   <section class="paso" data-paso="ex">
@@ -455,7 +458,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
       </div>
       <div id="exValida" class="valida"></div>
     </div>
-    <div class="onb-pie"><button data-ir="groq">◀</button><button class="primary" id="exSig">SIGUIENTE ▶</button></div>
+    <div class="onb-pie"><button data-ir="ia">◀</button><button class="primary" id="exSig">SIGUIENTE ▶</button></div>
   </section>
 
   <section class="paso" data-paso="resumen">
@@ -643,7 +646,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.2.0';
+var APP_VERSION='1.3.0';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -688,7 +691,7 @@ function hora(ms){var d=new Date(ms);return d.toLocaleString('es',{day:'2-digit'
 // ---------------------------------------------------------------- HTTP
 var httpN=0,httpPend={};
 window.kumoHttp=function(id,status,texto){var p=httpPend[id];if(!p)return;delete httpPend[id];var d;try{d=JSON.parse(texto||'{}')}catch(e){d={texto:texto}}p({status:status,data:d})};
-// Cloudflare y Groq no aceptan CORS: en la app pasa por Android; en navegador se intenta fetch.
+// Cloudflare y los proveedores de IA no aceptan CORS: en la app pasa por Android; en navegador se intenta fetch.
 function httpExterno(metodo,url,cab,cuerpo){
   if(NATIVO&&NATIVO.http){return new Promise(function(res){var id='h'+(++httpN);httpPend[id]=res;NATIVO.http(id,metodo,url,JSON.stringify(cab||{}),cuerpo?JSON.stringify(cuerpo):'')})}
   return fetch(url,{method:metodo,headers:cab,body:cuerpo?JSON.stringify(cuerpo):undefined}).then(function(r){return r.json().catch(function(){return {}}).then(function(d){return {status:r.status,data:d}})});
@@ -720,7 +723,7 @@ function irA(id){
 document.querySelectorAll('.nav button').forEach(function(b){b.onclick=function(){irA(b.getAttribute('data-target'))}});
 
 // ================================================================ BIENVENIDA
-var ORDEN=['hola','tema','inicio','gh','cf','groq','ex','resumen'];
+var ORDEN=['hola','tema','inicio','gh','cf','ia','ex','resumen'];
 var pasoActual='hola',modoAsistente='nuevo';
 function irPaso(p){
   pasoActual=p;
@@ -764,14 +767,14 @@ $('ghSig').onclick=function(){
     var scopes=(r.headers.get('x-oauth-scopes')||'');
     if(scopes&&(!/\brepo\b/.test(scopes)||!/\bworkflow\b/.test(scopes)))throw new Error('Al token le faltan permisos: marca «repo» y «workflow»');
     W.gh={token:t,login:r.data.login};v.className='valida ok';v.textContent='✔ Hola, '+r.data.login;
-    setTimeout(function(){irPaso(modoAsistente==='claves'?'groq':'cf')},450);
+    setTimeout(function(){irPaso(modoAsistente==='claves'?'ia':'cf')},450);
   }).catch(function(e){v.className='valida bad';v.textContent='✖ '+traduce(e)});
 };
 
 // -- Paso Cloudflare
 $('cfSig').onclick=function(){
   var t=$('cfToken').value.trim(),v=$('cfValida');
-  if(W.cf&&W.cf.token===t&&$('cfCuenta').value){W.cf.cuenta=$('cfCuenta').value;irPaso('groq');return}
+  if(W.cf&&W.cf.token===t&&$('cfCuenta').value){W.cf.cuenta=$('cfCuenta').value;irPaso('ia');return}
   if(!t){v.className='valida bad';v.textContent='Pega tu token de Cloudflare';return}
   v.className='valida';v.textContent='Validando…';
   var cab={Authorization:'Bearer '+t};
@@ -783,26 +786,57 @@ $('cfSig').onclick=function(){
     W.cf={token:t,cuenta:cuentas[0].id};
     $('cfCuenta').innerHTML=cuentas.map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>'}).join('');
     if(cuentas.length>1){$('cfCuentaL').classList.remove('oculto');v.className='valida ok';v.textContent='✔ Token válido: elige la cuenta y continúa';return}
-    v.className='valida ok';v.textContent='✔ Cuenta: '+cuentas[0].name;setTimeout(function(){irPaso('groq')},450);
+    v.className='valida ok';v.textContent='✔ Cuenta: '+cuentas[0].name;setTimeout(function(){irPaso('ia')},450);
   }).catch(function(e){
     v.className='valida bad';
     v.textContent='✖ '+(/fetch|NetworkError/i.test(String(e.message))&&!NATIVO?'Valida este paso desde la app Android (el navegador no puede llamar a Cloudflare)':traduce(e));
   });
 };
 
-// -- Paso Groq
-$('groqSig').onclick=function(){
-  var k=$('groqKey').value.trim(),v=$('groqValida');
-  if(!k&&modoAsistente==='claves'){delete W.groq;irPaso('ex');return}
-  if(!k){v.className='valida bad';v.textContent='Pega tu clave o toca «Seguir sin IA»';return}
+// -- Paso IA: cualquier proveedor compatible con OpenAI (catálogo: itsfree.ai)
+var IAS=[
+  {id:'kilo',n:'Kilo · sin cuenta (recomendado)',url:'https://api.kilo.ai/api/gateway',m:'nvidia/nemotron-3-super-120b-a12b:free,kilo-auto/free,qwen/qwen3.8-27b:free',sinClave:true,
+   nota:'No necesitas cuenta ni clave: funciona al instante. Límite: unas 200 consultas por hora. Si algún día se satura, cámbiate a Groq o Google.'},
+  {id:'groq',n:'Groq',url:'https://api.groq.com/openai/v1',m:'qwen/qwen3.8-27b,openai/gpt-oss-120b,llama-3.3-70b-versatile',link:'https://console.groq.com/keys',ph:'gsk_…',
+   nota:'Cuenta gratis con correo o Google → «Create API Key» → copia la clave (empieza por gsk_) y pégala. 1.000 consultas al día.'},
+  {id:'google',n:'Google AI Studio (Gemini)',url:'https://generativelanguage.googleapis.com/v1beta/openai',m:'gemini-3.7-flash',link:'https://aistudio.google.com/app/apikey',ph:'AIza…',
+   nota:'Con tu cuenta de Google → «Create API key». 1.500 consultas al día. En el plan gratis Google puede usar lo que envías para mejorar sus modelos (solo son precios e indicadores).'},
+  {id:'openrouter',n:'OpenRouter',url:'https://openrouter.ai/api/v1',m:'openrouter/free',link:'https://openrouter.ai/workspaces/default/keys',ph:'sk-or-…',
+   nota:'Cuenta con correo → crea una clave. Gratis: 50 consultas al día, justo para un ciclo cada 30 min (el Radar puede quedarse sin cupo).'},
+  {id:'mistral',n:'Mistral',url:'https://api.mistral.ai/v1',m:'mistral-small-latest',link:'https://console.mistral.ai/api-keys',
+   nota:'Cuenta con correo, plan gratis «Experiment» → crea una API key.'},
+  {id:'otro',n:'Otro (compatible con OpenAI)',
+   nota:'Cualquier proveedor de itsfree.ai que acepte el formato de OpenAI: pega su URL base, el modelo y la clave si la pide.'}
+];
+$('iaProv').innerHTML=IAS.map(function(x){return '<option value="'+x.id+'">'+esc(x.n)+'</option>'}).join('');
+function iaSel(){var id=$('iaProv').value;for(var i=0;i<IAS.length;i++)if(IAS[i].id===id)return IAS[i];return IAS[0]}
+function pintarIA(){
+  var x=iaSel();
+  $('iaNota').innerHTML=esc(x.nota)+(x.link?' <a href="#" data-url="'+esc(x.link)+'">ABRIR '+esc(x.n.split(' ')[0].toUpperCase())+'</a>':'')+(x.id==='otro'?' <a href="#" data-url="https://itsfree.ai/">VER ITSFREE.AI</a>':'');
+  $('iaUrlL').classList.toggle('oculto',x.id!=='otro');$('iaModeloL').classList.toggle('oculto',x.id!=='otro');
+  $('iaKeyL').classList.toggle('oculto',!!x.sinClave);
+  $('iaKey').placeholder=x.id==='otro'?'vacía si no pide clave':(x.ph||'pega tu clave');
+  $('iaValida').textContent='';
+}
+$('iaProv').onchange=pintarIA;pintarIA();
+$('iaSig').onclick=function(){
+  var x=iaSel(),v=$('iaValida'),k=x.sinClave?'':$('iaKey').value.trim();
+  var url=(x.id==='otro'?$('iaUrl').value.trim():x.url).replace(/\/+$/,''),modelos=x.id==='otro'?$('iaModelo').value.trim():x.m;
+  if(!k&&!x.sinClave&&x.id!=='otro'&&modoAsistente==='claves'){delete W.ia;irPaso('ex');return}
+  if(x.id==='otro'&&!/^https:\/\/[^\s\/]+\.[^\s]+$/.test(url)){v.className='valida bad';v.textContent='Escribe la URL base completa (https://…)';return}
+  if(x.id==='otro'&&!modelos){v.className='valida bad';v.textContent='Escribe el id del modelo';return}
+  if(!k&&!x.sinClave&&x.id!=='otro'){v.className='valida bad';v.textContent='Pega tu clave, elige Kilo (sin cuenta) o toca «Seguir sin IA»';return}
   v.className='valida';v.textContent='Validando…';
-  httpExterno('GET','https://api.groq.com/openai/v1/models',{Authorization:'Bearer '+k}).then(function(r){
-    if(r.status===401||r.status===403)throw new Error('Groq rechazó la clave');
-    if(r.status!==200)throw new Error('Groq respondió '+r.status);
-    W.groq=k;v.className='valida ok';v.textContent='✔ IA lista ('+((r.data.data||[]).length)+' modelos)';setTimeout(function(){irPaso('ex')},450);
+  httpExterno('GET',url+'/models',k?{Authorization:'Bearer '+k}:{}).then(function(r){
+    if(r.status===401||r.status===403)throw new Error(x.id==='otro'?'El proveedor pide una clave válida':'Rechazó la clave: revisa que la copiaste completa');
+    if(r.status!==200)throw new Error('El proveedor respondió '+r.status+(r.status===404?': revisa la URL':''));
+    var ids=((r.data&&r.data.data)||[]).map(function(m){return String(m.id||'').replace(/^models\//,'')});
+    if(x.id==='otro'&&ids.length&&ids.indexOf(modelos)<0)throw new Error('Ese modelo no está en su lista. Algunos: '+ids.slice(0,4).join(', '));
+    W.ia={url:url,modelos:modelos,clave:k,nombre:x.id==='otro'?url.replace(/^https?:\/\/(api\.)?/,'').split('/')[0]:x.n.split(' ·')[0]};
+    v.className='valida ok';v.textContent='✔ IA lista: '+W.ia.nombre+(ids.length?' ('+ids.length+' modelos)':'');setTimeout(function(){irPaso('ex')},450);
   }).catch(function(e){v.className='valida bad';v.textContent='✖ '+traduce(e)});
 };
-$('groqSaltar').onclick=function(){W.groq='';irPaso('ex')};
+$('iaSaltar').onclick=function(){W.ia='';irPaso('ex')};
 
 // -- Paso Exchange
 var EXCHANGES=[
@@ -847,7 +881,7 @@ function pintarResumen(){
   $('resumen').innerHTML=
     fila('GitHub',W.gh?('@'+esc(W.gh.login)+' · repositorio privado'):'falta',!!W.gh)+
     (cambio?'':fila('Cloudflare',W.cf?'cuenta '+esc(W.cf.cuenta.slice(0,8))+'…':'falta',!!W.cf))+
-    fila('IA Groq',W.groq?'activada':(W.groq===''?'sin IA':'sin cambios'),!!W.groq)+
+    fila('IA',W.ia?esc(W.ia.nombre):(W.ia===''?'sin IA':'sin cambios'),!!W.ia)+
     fila('Exchange',W.ex?esc(W.ex.nombre)+' · '+esc(W.ex.quote)+(W.ex.key?' · con claves':' · solo simulación'):'falta',!!W.ex)+
     '<p class="notice">'+(cambio?'Actualizo los secretos de tu repositorio y reinstalo la nube con ellos.':'Voy a crear tu repositorio privado, guardar las claves cifradas, desplegar tu nube en Cloudflare y lanzar el primer ciclo en <b>simulación</b>.')+'</p>';
   $('instalar').textContent=cambio?'🔐 GUARDAR CLAVES':'☁️ CREAR MI NUBE';
@@ -932,7 +966,7 @@ $('instalar').onclick=function(){
     S.gh={token:W.gh.token,owner:owner,repo:repo,rama:rama};guardarS();
     var l=logI('Cifrando y guardando tus claves en GitHub…');
     var sec={EXCHANGE_ID:W.ex.id,EXCHANGE_API_KEY:W.ex.key||null,EXCHANGE_SECRET:W.ex.secret||null,EXCHANGE_PASSWORD:W.ex.pass||null,KUMO_APP_TOKEN:appToken,KUMO_RUNNER_TOKEN:aleatorio()};
-    if(W.groq!==undefined)sec.GROQ_API_KEY=W.groq||null;
+    if(W.ia!==undefined){var ia=W.ia||{};sec.IA_URL=ia.url||null;sec.IA_MODELOS=ia.modelos||null;sec.IA_CLAVE=ia.clave||null;sec.GROQ_API_KEY=null}
     if(W.cf){sec.CLOUDFLARE_API_TOKEN=W.cf.token;sec.CLOUDFLARE_ACCOUNT_ID=W.cf.cuenta}
     return ponerSecretos(owner,repo,sec).then(function(){l.className='ok';l.textContent='Claves guardadas cifradas ('+Object.keys(sec).length+' secretos)'});
   }).then(function(){
@@ -953,7 +987,7 @@ $('instalar').onclick=function(){
     return api('/api/config',W.ex.id==='hyperliquid'?{quote:W.ex.quote,monto_min:11,monto_max:30}:{quote:W.ex.quote}).then(function(){return lanzarWorkflow(owner,repo,'ciclo.yml',rama)}).then(function(){l.className='ok';l.textContent='Primer ciclo en marcha (tarda 1-2 min)'});
   }).then(function(){
     logI('¡Despegue completado!','ok');W={};
-    ['ghToken','cfToken','groqKey','exKey','exSecret','exPass'].forEach(function(i){$(i).value=''});
+    ['ghToken','cfToken','iaKey','iaUrl','iaModelo','exKey','exSecret','exPass'].forEach(function(i){$(i).value=''});
     setTimeout(function(){irPaso('fin')},700);
   }).catch(function(e){
     logI(traduce(e),'err');
@@ -973,13 +1007,13 @@ var TUTO=[
  '<p>Todo es gratis. Ten a mano tu correo y unos <b>15 minutos</b>:</p><div class="req">'+
  '<div><span>🐙</span><p style="margin:0"><b>Cuenta de GitHub</b><small>Ejecuta el bot cada 30 min y guarda tus claves cifradas.</small></p></div>'+
  '<div><span>☁️</span><p style="margin:0"><b>Cuenta de Cloudflare</b><small>Aloja tu nube: la app se conecta a ella.</small></p></div>'+
- '<div><span>🧠</span><p style="margin:0"><b>Cuenta de Groq</b> (opcional)<small>La IA que revisa las operaciones y analiza monedas.</small></p></div>'+
+ '<div><span>🧠</span><p style="margin:0"><b>IA</b> (opcional)<small>Revisa las operaciones y analiza monedas. Con Kilo no necesitas cuenta.</small></p></div>'+
  '<div><span>💱</span><p style="margin:0"><b>Cuenta en un exchange</b><small>Crypto.com, Kraken, Coinbase… Puedes empezar sin claves, solo en simulación.</small></p></div></div>',
  '<span class="tuto-num">3</span><span class="eyebrow"><span class="kata">鍵</span>LAS CLAVES</span><h2>Cómo sacar cada clave</h2>'+
  '<p>El asistente te da un botón para cada una. El truco: <b>abre el enlace → crea la clave → cópiala → vuelve a Kumo → pégala</b>.</p><ol>'+
  '<li><b>GitHub</b>: token clásico con permisos <code>repo</code> y <code>workflow</code> (el enlace ya los marca).</li>'+
  '<li><b>Cloudflare</b>: My Profile → API Tokens → Create Token → plantilla <b>«Edit Cloudflare Workers»</b>.</li>'+
- '<li><b>Groq</b>: console.groq.com → API Keys → Create API Key.</li>'+
+ '<li><b>IA</b>: elige <b>Kilo</b> y no necesitas clave. O saca una gratis en Groq o Google AI Studio.</li>'+
  '<li><b>Exchange</b>: crea una API key con <b>lectura y trading. NUNCA con retiros.</b></li></ol>'+
  '<p class="notice warn">Cada clave se muestra una sola vez: cópiala antes de cerrar la página.</p>',
  '<span class="tuto-num">4</span><span class="eyebrow"><span class="kata">発進</span>INSTALACIÓN</span><h2>Qué hago con tus claves</h2><ol>'+

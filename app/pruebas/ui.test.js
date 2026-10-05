@@ -131,7 +131,10 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   const nativo=w=>({estado:()=>'{}',barras(){},abrirUrl(u){abiertos.push(u)},config(){},
     http(id,met,url,cab,cuerpo){const h=JSON.parse(cab);let st=200,dat={};
       if(url.includes('/accounts'))dat=h.Authorization==='Bearer cf-bueno'?{success:true,result:[{id:'acc123456789',name:'Cuenta de Amigo'}]}:{success:false,result:null};
-      else if(url.includes('groq.com'))dat={data:[{id:'m1'},{id:'m2'}]};
+      else if(url==='https://api.groq.com/openai/v1/models'){if(h.Authorization==='Bearer gsk_bueno')dat={data:[{id:'m1'},{id:'m2'}]};else{st=401;dat={error:'bad'}}}
+      else if(url==='https://api.kilo.ai/api/gateway/models'){if(h.Authorization){st=400}else dat={data:[{id:'kilo-auto/free'},{id:'nvidia/nemotron-3-super-120b-a12b:free'}]}}
+      else if(url==='https://ia.ejemplo.com/v1/models')dat={data:[{id:'modelo-a'},{id:'modelo-b'}]};
+      else st=404;
       setTimeout(()=>w.kumoHttp(id,st,JSON.stringify(dat)),5)}});
   const {w,d,errores}=crear(fetchMock,nativo);
   await espera(30);
@@ -144,9 +147,19 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   d.getElementById('cfToken').value='cf-malo';click(d,'#cfSig');await espera(60);
   ok(/rechazó/.test(d.getElementById('cfValida').textContent),'token de Cloudflare inválido detectado');
   d.getElementById('cfToken').value='cf-bueno';click(d,'#cfSig');await espera(600);
-  ok(d.querySelector('.paso.activo').dataset.paso==='groq','Cloudflare validado y cuenta detectada');
-  d.getElementById('groqKey').value='gsk_prueba';click(d,'#groqSig');await espera(600);
-  ok(d.querySelector('.paso.activo').dataset.paso==='ex','Groq validado');
+  ok(d.querySelector('.paso.activo').dataset.paso==='ia','Cloudflare validado y cuenta detectada');
+  const prov=v=>{d.getElementById('iaProv').value=v;d.getElementById('iaProv').dispatchEvent(new w.Event('change'))};
+  ok(d.getElementById('iaProv').value==='kilo'&&d.getElementById('iaKeyL').classList.contains('oculto'),'IA: Kilo sin cuenta por defecto, sin campo de clave');
+  ok(d.getElementById('iaProv').options.length>=6,'IA: varios proveedores gratis para elegir');
+  prov('groq');ok(!d.getElementById('iaKeyL').classList.contains('oculto')&&/ABRIR GROQ/.test(d.getElementById('iaNota').textContent),'IA: Groq pide clave y da el enlace');
+  click(d,'#iaSig');ok(/Pega tu clave/.test(d.getElementById('iaValida').textContent),'IA: Groq sin clave → avisa');
+  d.getElementById('iaKey').value='gsk_malo';click(d,'#iaSig');await espera(60);
+  ok(/Rechazó la clave/.test(d.getElementById('iaValida').textContent),'IA: clave de Groq inválida detectada');
+  prov('otro');ok(!d.getElementById('iaUrlL').classList.contains('oculto')&&!d.getElementById('iaModeloL').classList.contains('oculto'),'IA: «Otro» pide URL y modelo');
+  d.getElementById('iaUrl').value='https://ia.ejemplo.com/v1/';d.getElementById('iaModelo').value='modelo-x';d.getElementById('iaKey').value='';click(d,'#iaSig');await espera(60);
+  ok(/no está en su lista.*modelo-a/.test(d.getElementById('iaValida').textContent),'IA: «Otro» avisa si el modelo no existe y sugiere otros');
+  prov('kilo');click(d,'#iaSig');await espera(600);
+  ok(d.querySelector('.paso.activo').dataset.paso==='ex','IA: Kilo validado sin clave ('+d.getElementById('iaValida').textContent+')');
   d.getElementById('exId').value='kraken';d.getElementById('exId').dispatchEvent(new w.Event('change'));
   ok(d.getElementById('exQuote').options.length===3,'monedas base de Kraken');
   click(d,'#exSig');ok(/Falta la API key/.test(d.getElementById('exValida').textContent),'pide claves del exchange');
@@ -167,11 +180,12 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   const S=w.__kumo.S;
   ok(sinToken.length===0,"todas las llamadas a GitHub llevan token: "+sinToken.join(", "));
   ok(S.url===appUrl&&S.token===secretos.KUMO_APP_TOKEN&&S.token.length===48,'app conectada con el token generado');
-  ok(secretos.CLOUDFLARE_API_TOKEN==='cf-bueno'&&secretos.CLOUDFLARE_ACCOUNT_ID==='acc123456789'&&secretos.GROQ_API_KEY==='gsk_prueba','secretos de nube descifrables por GitHub');
+  ok(secretos.CLOUDFLARE_API_TOKEN==='cf-bueno'&&secretos.CLOUDFLARE_ACCOUNT_ID==='acc123456789','secretos de nube descifrables por GitHub');
+  ok(secretos.IA_URL==='https://api.kilo.ai/api/gateway'&&/nemotron/.test(secretos.IA_MODELOS)&&secretos.IA_CLAVE==='<<borrado>>'&&secretos.GROQ_API_KEY==='<<borrado>>','secretos de IA: Kilo sin clave y Groq viejo borrado');
   ok(secretos.EXCHANGE_ID==='kraken'&&secretos.EXCHANGE_API_KEY==='kk'&&secretos.EXCHANGE_SECRET==='ss'&&secretos.EXCHANGE_PASSWORD==='<<borrado>>','secretos del exchange');
   ok(secretos.KUMO_RUNNER_TOKEN&&secretos.KUMO_RUNNER_TOKEN!==S.token,'token del runner distinto');
   ok(despachos.join()==='instalar.yml,ciclo.yml','lanzó instalar y luego el primer ciclo');
-  ok(!JSON.stringify(S).includes('cf-bueno')&&!JSON.stringify(S).includes('gsk_')&&!JSON.stringify(S).includes('"kk"'),'claves de Cloudflare/Groq/exchange NO quedan en el teléfono');
+  ok(!JSON.stringify(S).includes('cf-bueno')&&!JSON.stringify(S).includes('gsk_')&&!JSON.stringify(S).includes('kilo.ai')&&!JSON.stringify(S).includes('"kk"'),'claves de Cloudflare/Groq/exchange NO quedan en el teléfono');
   ok(d.getElementById('exKey').value===''&&d.getElementById('cfToken').value==='','campos de claves vaciados');
   click(d,'#finEntrar');await espera(50);
   ok(d.getElementById('conn').textContent.includes('EN LÍNEA'),'app en línea con la nube nueva');

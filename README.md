@@ -1,7 +1,7 @@
 <p align="center"><img src="docs/logo-512.png" width="140" alt="Kumo Bot"></p>
 <h1 align="center">Kumo Bot 雲</h1>
 <p align="center"><b>Bot de trading cripto que corre en <i>tu propia nube</i>, con tus reglas.</b><br>
-<a href="#-apoya-al-desarrollador">☕ Donar</a> · App Android · Cloudflare Workers · GitHub Actions · IA con Groq · 100+ exchanges vía ccxt</p>
+<a href="#-apoya-al-desarrollador">☕ Donar</a> · App Android · Cloudflare Workers · GitHub Actions · IA gratis (con o sin cuenta) · 100+ exchanges vía ccxt</p>
 
 ---
 
@@ -13,7 +13,7 @@ mantiene este repositorio.
 
 - **Empieza en simulación**: cartera virtual con precios reales. El dinero real se activa a mano, con doble confirmación.
 - **Reglas claras**: reparto objetivo por moneda, compra con RSI bajo, vende con ganancia. Por defecto **nunca vende con pérdida**.
-- **IA opcional (Groq)**: puede vetar o confirmar cada operación y analiza monedas en el Radar.
+- **IA opcional y gratis**: puede vetar o confirmar cada operación y analiza monedas en el Radar. Funciona con cualquier proveedor compatible con OpenAI del catálogo de [itsfree.ai](https://itsfree.ai): **Kilo sin cuenta ni clave**, Groq, Google AI Studio, OpenRouter, Mistral u otro.
 - **Cualquier exchange**: Crypto.com (App y Exchange), Kraken, Coinbase, Bitstamp, MEXC, Gate… y cualquier id de [ccxt](https://github.com/ccxt/ccxt).
 - **App con 3 interfaces**: Neón Noche y Neón Día (manga cyberpunk) o Clásica.
 
@@ -23,7 +23,7 @@ mantiene este repositorio.
 2. En la bienvenida elige **Crear mi nube** y sigue el asistente:
    - **GitHub**: token clásico con permisos `repo` y `workflow`.
    - **Cloudflare**: API token con la plantilla **«Edit Cloudflare Workers»**.
-   - **Groq** (opcional): clave gratis de console.groq.com.
+   - **IA** (opcional): elige **Kilo** y no necesitas cuenta; o pega una clave gratis de Groq, Google AI Studio, OpenRouter o Mistral.
    - **Exchange**: API key **solo con trading, nunca con retiros** (o empieza sin claves).
 3. La app crea `tu-usuario/kumo-nube` (privado) desde esta plantilla, guarda las claves como
    *secretos cifrados* de GitHub, despliega el Worker en tu Cloudflare y lanza el primer ciclo.
@@ -35,7 +35,7 @@ mantiene este repositorio.
                                       ▲
                                       │ reporte de cada ciclo
  GitHub Actions en TU repo privado ───┘  (cada 30 min: lee precios, decide, opera con ccxt)
-   └─ secretos cifrados: claves del exchange, Groq, Cloudflare
+   └─ secretos cifrados: claves del exchange, IA (IA_URL, IA_MODELOS, IA_CLAVE), Cloudflare
 ```
 
 - `runner/`: motor en Python (estrategia, IA, adaptadores de exchange). Pruebas: `python -m unittest discover -s runner/tests`.
