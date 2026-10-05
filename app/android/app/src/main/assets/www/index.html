@@ -526,6 +526,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
       <div class="metric"><span>Libre para comprar</span><b id="libre">—</b></div>
       <div class="metric"><span>IA</span><b id="iaModelo">—</b></div>
     </div>
+    <p id="saldoReal" class="notice oculto" style="margin-top:9px"></p>
     <div class="grid two" style="margin-top:9px"><button id="cicloAhora" class="primary">▶ CICLO AHORA</button><button id="pausaBtn" class="danger">PAUSAR</button></div>
   </div>
   <div class="panel">
@@ -650,7 +651,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.3.2';
+var APP_VERSION='1.3.3';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -1114,6 +1115,18 @@ function pintarEstado(){
   $('ultCiclo').textContent=e.ciclo?('#'+e.ciclo+' · '+hace(e.actualizado)):'—';
   $('proxCiclo').textContent=proximo();
   $('libre').textContent=u.libre!=null?num(u.libre,2)+' '+(u.quote||''):'—';
+  // Saldo real del exchange (solo lectura): también en simulación, para comprobar las claves.
+  var R=u.real,sr=$('saldoReal'),exN=esc((u.exchange||S.exchange||'tu exchange').replace('_',' '));
+  if(!R)sr.className='notice oculto';
+  else if(R.error){sr.className='notice warn';sr.innerHTML='<b>Saldo real en '+exN+'</b><br>No pude leerlo: '+esc(R.error)}
+  else{
+    var otros=Object.keys(R.saldos||{}).filter(function(k){return k!==u.quote}).slice(0,4).map(function(k){return esc(k)+' '+num(R.saldos[k],4)}).join(' · ');
+    sr.className='notice'+(R.perps_usdc&&!R.libre?' warn':'');
+    sr.innerHTML='<b>Saldo real en '+exN+'</b>: '+num(R.libre,2)+' '+esc(u.quote||'')+' libres'+
+      (R.perps_usdc?'<br>'+num(R.perps_usdc,2)+' USDC en Perps: pásalos a Spot en Hyperliquid (Transfer → Perps a Spot) para que Kumo los use.':'')+
+      (otros?'<br><small>'+otros+'</small>':'')+
+      (real?'':'<br><small>Estás en simulación: el bot opera con dinero virtual y este saldo no se toca hasta que actives Dinero real.</small>');
+  }
   $('iaModelo').textContent=c.ia==='off'?'Apagada':((u.ia&&u.ia.modelo)||'—');
   $('pausaBtn').textContent=c.pausado?'REANUDAR':'PAUSAR';$('pausaBtn').className=c.pausado?'primary':'danger';
   var errs=u.errores||[];$('erroresAviso').classList.toggle('oculto',!errs.length);$('erroresAviso').innerHTML='<b>⚠ Atención</b><br>'+errs.map(esc).join('<br>');

@@ -123,7 +123,7 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
     if(url.startsWith(appUrl)){
       const tok=(o.headers||{}).Authorization;
       if(tok!=='Bearer '+secretos.KUMO_APP_TOKEN)return R(401,{error:'Token inválido'});
-      if(p==='/api/estado')return R(200,{config:{modo:'simulacion',quote:'USD',objetivo:{}},ciclo:0});
+      if(p==='/api/estado')return R(200,{config:{modo:'simulacion',quote:'USD',objetivo:{}},ciclo:0,ultimo:{quote:'USDC',exchange:'hyperliquid',total:1000,real:{libre:0,estables:0,perps_usdc:25.5,saldos:{HYPE:1.25}}}});
       if(p==='/api/config')return R(200,{ok:true,config:{quote:JSON.parse(o.body||'{}').quote}});
     }
     return R(404,{message:'no mock '+url});
@@ -197,6 +197,8 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   ok(d.getElementById('exKey').value===''&&d.getElementById('cfToken').value==='','campos de claves vaciados');
   click(d,'#finEntrar');await espera(50);
   ok(d.getElementById('conn').textContent.includes('EN LÍNEA'),'app en línea con la nube nueva');
+  await espera(100);const sr=d.getElementById('saldoReal');
+  ok(!sr.classList.contains('oculto')&&/Saldo real en hyperliquid/.test(sr.textContent)&&/25,5 USDC en Perps/.test(sr.textContent)&&/HYPE 1,25/.test(sr.textContent)&&/simulación/.test(sr.textContent),'panel: saldo real del exchange visible en simulación, con aviso de Perps ('+sr.textContent.slice(0,80)+')');
   await espera(300);
   ok(!d.getElementById('updBanda').classList.contains('oculto')&&/v9\.9\.9/.test(d.getElementById('updBanda').textContent),'banda de nueva versión visible');
   ok(d.getElementById('modal').classList.contains('open')&&/v9\.9\.9/.test(d.getElementById('mTitulo').textContent)&&/Novedades de prueba/.test(d.getElementById('mExtra').textContent),'aviso de actualización al entrar a la app (no durante el asistente)');

@@ -33,7 +33,7 @@ jobs:
           APP: ${{ secrets.KUMO_APP_TOKEN }}
           RUN: ${{ secrets.KUMO_RUNNER_TOKEN }}
         run: |
-          falta=""""
+          falta=""
           [ -n "$CLOUDFLARE_API_TOKEN" ] || falta="$falta CLOUDFLARE_API_TOKEN"
           [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || falta="$falta CLOUDFLARE_ACCOUNT_ID"
           [ -n "$APP" ] || falta="$falta KUMO_APP_TOKEN"
