@@ -190,6 +190,7 @@ html[data-tema="noche"] .kanji{text-shadow:3px 3px 0 var(--acento2)}
 .log-inst{background:var(--panel);border:2px solid var(--line);border-radius:4px;padding:10px;font:12px/1.6 ui-monospace,Menlo,monospace;min-height:150px}
 .log-inst div::before{content:"▸ ";color:var(--acento)}
 .log-inst .ok::before{content:"✔ ";color:var(--up)}
+.prog{display:flex;align-items:center;gap:10px;margin:10px 0 8px}.prog-barra{flex:1;height:10px;background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}.prog-barra i{display:block;height:100%;width:0;background:var(--acento);transition:width .6s ease}.prog.ok .prog-barra i{background:var(--up)}.prog.err .prog-barra i{background:var(--down)}.prog b{font:700 15px ui-monospace,Menlo,monospace;min-width:46px;text-align:right}
 .log-inst .err{color:var(--down)}.log-inst .err::before{content:"✖ ";color:var(--down)}
 .boom{font-size:44px;font-weight:900;font-style:italic;color:var(--acento);text-align:center;font-family:"sans-serif-condensed","Roboto Condensed",system-ui,sans-serif;transform:rotate(-4deg);margin:10px 0}
 html[data-tema="noche"] .boom{text-shadow:3px 3px 0 var(--acento2)}
@@ -471,6 +472,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
         <label>Nombre de tu repositorio<input id="repoNombre" autocomplete="off"></label>
       </div>
     </details>
+    <div id="instProg" class="prog oculto" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="prog-barra"><i id="instBarra"></i></div><b id="instPct">0%</b></div>
     <div id="instLog" class="log-inst oculto" aria-live="polite"></div>
     <div class="onb-pie"><button data-ir="ex" id="resAtras">◀</button><button class="primary" id="instalar">☁️ CREAR MI NUBE</button></div>
   </section>
@@ -646,7 +648,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.3.0';
+var APP_VERSION='1.3.1';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -886,17 +888,25 @@ function pintarResumen(){
     '<p class="notice">'+(cambio?'Actualizo los secretos de tu repositorio y reinstalo la nube con ellos.':'Voy a crear tu repositorio privado, guardar las claves cifradas, desplegar tu nube en Cloudflare y lanzar el primer ciclo en <b>simulación</b>.')+'</p>';
   $('instalar').textContent=cambio?'🔐 GUARDAR CLAVES':'☁️ CREAR MI NUBE';
 }
+// Barra de progreso de la instalación: nunca retrocede.
+var progN=0;
+function progreso(p,estado){
+  if(p!=null)progN=Math.max(progN,Math.min(100,Math.round(p)));
+  $('instBarra').style.width=progN+'%';$('instPct').textContent=progN+'%';$('instProg').setAttribute('aria-valuenow',progN);
+  $('instProg').className='prog'+(estado?' '+estado:'');
+}
 function logI(t,cls){var d=document.createElement('div');d.textContent=t;if(cls)d.className=cls;$('instLog').appendChild(d);$('instLog').scrollIntoView({block:'end'});return d}
 function espera(ms){return new Promise(function(r){setTimeout(r,ms)})}
 function aleatorio(){var a=new Uint8Array(24);crypto.getRandomValues(a);return Array.prototype.map.call(a,function(b){return ('0'+b.toString(16)).slice(-2)}).join('')}
 function okGh(r,que){if(r.status>=200&&r.status<300)return r;var m=(r.data&&r.data.message)||('HTTP '+r.status);throw new Error(que+': '+m)}
 
-function ponerSecretos(owner,repo,secretos){
+function ponerSecretos(owner,repo,secretos,avance){
   return gh('GET','/repos/'+owner+'/'+repo+'/actions/secrets/public-key').then(function(r){
     okGh(r,'Clave pública de GitHub');var clave=r.data;
     var nombres=Object.keys(secretos),i=0;
     function sig(){
       if(i>=nombres.length)return Promise.resolve();
+      if(avance)avance(i/nombres.length);
       var n=nombres[i++],v=secretos[n];
       var p=v===null?gh('DELETE','/repos/'+owner+'/'+repo+'/actions/secrets/'+n).then(function(r){if(r.status!==404)okGh(r,'Borrar '+n)})
         :gh('PUT','/repos/'+owner+'/'+repo+'/actions/secrets/'+n,{encrypted_value:window.kumoSellar(clave.key,String(v)),key_id:clave.key_id}).then(function(r){okGh(r,'Guardar '+n)});
@@ -916,17 +926,32 @@ function lanzarWorkflow(owner,repo,wf,rama){
   }
   return intenta();
 }
-function esperarRun(owner,repo,wf,desde,linea){
+// Espera a que termine el workflow. Si se le da «avance(fraccion)», informa qué
+// parte de los pasos del job ya terminó (según GitHub) para la barra de progreso.
+function esperarRun(owner,repo,wf,desde,linea,avance){
   var t0=Date.now();
+  function pasos(run){
+    if(!avance)return Promise.resolve('');
+    return gh('GET','/repos/'+owner+'/'+repo+'/actions/runs/'+run.id+'/jobs').then(function(r){
+      var st=(r.status===200&&r.data.jobs&&r.data.jobs[0]&&r.data.jobs[0].steps)||[];
+      if(!st.length){avance(run.status==='queued'?0.03:Math.min(0.9,(Date.now()-t0)/180000));return ''}
+      var hechos=st.filter(function(x){return x.status==='completed'}).length,actual=st.filter(function(x){return x.status==='in_progress'})[0];
+      avance(hechos/st.length);
+      return actual?': '+actual.name+' ('+(hechos+1)+'/'+st.length+')':'';
+    }).catch(function(){return ''});
+  }
   function mira(){
     return gh('GET','/repos/'+owner+'/'+repo+'/actions/workflows/'+wf+'/runs?per_page=3').then(function(r){
       okGh(r,'Estado de la instalación');
       var run=(r.data.workflow_runs||[]).filter(function(x){return Date.parse(x.created_at)>=desde-60000})[0];
       var seg=Math.round((Date.now()-t0)/1000);
-      if(run){
-        linea.textContent='Instalando en Cloudflare… '+({queued:'en cola',in_progress:'en curso',completed:'terminado'}[run.status]||run.status)+' ('+seg+' s)';
-        if(run.status==='completed'){if(run.conclusion==='success')return run;var e=new Error('La instalación falló en GitHub Actions. Revisa el detalle en: '+run.html_url);e.url=run.html_url;throw e}
-      }else linea.textContent='Esperando a GitHub Actions… ('+seg+' s)';
+      if(!run){linea.textContent='Esperando a GitHub Actions… ('+seg+' s)';return null}
+      if(run.status==='completed'){if(run.conclusion==='success'){if(avance)avance(1);return run}var e=new Error('La instalación falló en GitHub Actions. Revisa el detalle en: '+run.html_url);e.url=run.html_url;throw e}
+      return pasos(run).then(function(paso){
+        linea.textContent='Instalando en Cloudflare… '+({queued:'en cola',in_progress:'en curso'}[run.status]||run.status)+paso+' ('+seg+' s)';return null;
+      });
+    }).then(function(run){
+      if(run)return run;
       if(Date.now()-t0>12*60000)throw new Error('La instalación tarda demasiado. Revisa la pestaña Actions de tu repositorio.');
       return espera(6000).then(mira);
     });
@@ -942,24 +967,25 @@ $('instalar').onclick=function(){
   if(!W.ex){toast('Falta elegir el exchange',true);irPaso('ex');return}
   instalando=true;$('instalar').disabled=true;$('resAtras').disabled=true;
   var log=$('instLog');log.innerHTML='';log.classList.remove('oculto');
+  progN=0;$('instProg').classList.remove('oculto');progreso(2);
   var owner=W.gh.login,repo=$('repoNombre').value.trim()||'kumo-nube',plantilla=$('plantilla').value.trim()||PLANTILLA,rama='main';
   var appToken=S.token&&S.gh&&S.gh.owner===owner&&S.gh.repo===repo?S.token:aleatorio();
   var t0;
   logI('¡Iniciando secuencia de despegue!');
   var l1=logI('Preparando tu repositorio privado…');
   gh('GET','/repos/'+owner+'/'+repo,null,W.gh.token).then(function(r){
-    if(r.status===200){l1.textContent='Repositorio '+owner+'/'+repo+' ya existe: lo reutilizo';l1.className='ok';rama=r.data.default_branch||'main';return}
+    if(r.status===200){l1.textContent='Repositorio '+owner+'/'+repo+' ya existe: lo reutilizo';l1.className='ok';progreso(18);rama=r.data.default_branch||'main';return}
     if(modoAsistente==='claves')throw new Error('No encuentro '+owner+'/'+repo);
     return gh('POST','/repos/'+plantilla+'/generate',{owner:owner,name:repo,private:true,description:'Mi nube de Kumo Bot ☁️'},W.gh.token).then(function(r){
       okGh(r,'Crear repositorio desde '+plantilla);rama=r.data.default_branch||'main';
-      l1.textContent='Repositorio privado '+owner+'/'+repo+' creado';l1.className='ok';
+      l1.textContent='Repositorio privado '+owner+'/'+repo+' creado';l1.className='ok';progreso(10);
       var l=logI('Esperando a que GitHub copie los archivos…'),n=0;
       // Con el token recién validado: S.gh aún no existe y sin token el repo privado da 404.
       function listo(){return gh('GET','/repos/'+owner+'/'+repo+'/contents/.github/workflows/instalar.yml?ref='+rama,null,W.gh.token).then(function(r){
-        if(r.status===200){l.className='ok';l.textContent='Archivos listos';return}
+        if(r.status===200){l.className='ok';l.textContent='Archivos listos';progreso(18);return}
         if(r.status===401||r.status===403)okGh(r,'Leer el repositorio nuevo');
         if(n++>40)throw new Error('GitHub no terminó de copiar la plantilla en 2 min. Toca Reintentar.');
-        l.textContent='Esperando a que GitHub copie los archivos… ('+n*3+' s)';return espera(3000).then(listo)})}
+        l.textContent='Esperando a que GitHub copie los archivos… ('+n*3+' s)';progreso(10+Math.min(7,n/3));return espera(3000).then(listo)})}
       return listo();
     });
   }).then(function(){
@@ -968,29 +994,29 @@ $('instalar').onclick=function(){
     var sec={EXCHANGE_ID:W.ex.id,EXCHANGE_API_KEY:W.ex.key||null,EXCHANGE_SECRET:W.ex.secret||null,EXCHANGE_PASSWORD:W.ex.pass||null,KUMO_APP_TOKEN:appToken,KUMO_RUNNER_TOKEN:aleatorio()};
     if(W.ia!==undefined){var ia=W.ia||{};sec.IA_URL=ia.url||null;sec.IA_MODELOS=ia.modelos||null;sec.IA_CLAVE=ia.clave||null;sec.GROQ_API_KEY=null}
     if(W.cf){sec.CLOUDFLARE_API_TOKEN=W.cf.token;sec.CLOUDFLARE_ACCOUNT_ID=W.cf.cuenta}
-    return ponerSecretos(owner,repo,sec).then(function(){l.className='ok';l.textContent='Claves guardadas cifradas ('+Object.keys(sec).length+' secretos)'});
+    return ponerSecretos(owner,repo,sec,function(f){progreso(18+12*f)}).then(function(){l.className='ok';l.textContent='Claves guardadas cifradas ('+Object.keys(sec).length+' secretos)';progreso(30)});
   }).then(function(){
     var l=logI('Lanzando la instalación en Cloudflare…');t0=Date.now();
-    return lanzarWorkflow(owner,repo,'instalar.yml',rama).then(function(){return esperarRun(owner,repo,'instalar.yml',t0,l)}).then(function(){l.className='ok';l.textContent='Nube desplegada en Cloudflare'});
+    return lanzarWorkflow(owner,repo,'instalar.yml',rama).then(function(){progreso(33);return esperarRun(owner,repo,'instalar.yml',t0,l,function(f){progreso(33+50*f)})}).then(function(){l.className='ok';l.textContent='Nube desplegada en Cloudflare';progreso(83)});
   }).then(function(){
     var l=logI('Leyendo la dirección de tu nube…');
     return gh('GET','/repos/'+owner+'/'+repo+'/contents/kumo.json?ref='+rama).then(function(r){
       okGh(r,'kumo.json');var info=JSON.parse(decodeURIComponent(escape(atob(String(r.data.content).replace(/\s/g,'')))));
-      l.className='ok';l.textContent='Tu nube: '+info.url;return info.url;
+      l.className='ok';l.textContent='Tu nube: '+info.url;progreso(87);return info.url;
     });
   }).then(function(url){
     var l=logI('Probando la conexión…');
-    return fetch(url+'/api/estado',{headers:{Authorization:'Bearer '+appToken}}).then(function(r){if(!r.ok)throw new Error('La nube respondió HTTP '+r.status);l.className='ok';l.textContent='Conexión segura OK';
+    return fetch(url+'/api/estado',{headers:{Authorization:'Bearer '+appToken}}).then(function(r){if(!r.ok)throw new Error('La nube respondió HTTP '+r.status);l.className='ok';l.textContent='Conexión segura OK';progreso(92);
       S.url=url;S.token=appToken;S.demo=false;S.exchange=W.ex.nombre;guardarS();if(NATIVO&&NATIVO.config)NATIVO.config(url,appToken);});
   }).then(function(){
     var l=logI('Configurando la moneda base y lanzando el primer ciclo…');
-    return api('/api/config',W.ex.id==='hyperliquid'?{quote:W.ex.quote,monto_min:11,monto_max:30}:{quote:W.ex.quote}).then(function(){return lanzarWorkflow(owner,repo,'ciclo.yml',rama)}).then(function(){l.className='ok';l.textContent='Primer ciclo en marcha (tarda 1-2 min)'});
+    return api('/api/config',W.ex.id==='hyperliquid'?{quote:W.ex.quote,monto_min:11,monto_max:30}:{quote:W.ex.quote}).then(function(){return lanzarWorkflow(owner,repo,'ciclo.yml',rama)}).then(function(){l.className='ok';l.textContent='Primer ciclo en marcha (tarda 1-2 min)';progreso(97)});
   }).then(function(){
-    logI('¡Despegue completado!','ok');W={};
+    logI('¡Despegue completado!','ok');progreso(100,'ok');W={};
     ['ghToken','cfToken','iaKey','iaUrl','iaModelo','exKey','exSecret','exPass'].forEach(function(i){$(i).value=''});
     setTimeout(function(){irPaso('fin')},700);
   }).catch(function(e){
-    logI(traduce(e),'err');
+    logI(traduce(e),'err');progreso(null,'err');
     if(e.url){var d=logI('Abrir detalle en GitHub');d.style.textDecoration='underline';d.onclick=function(){abrirUrl(e.url)}}
     $('instalar').textContent='↻ REINTENTAR';
   }).then(function(){instalando=false;$('instalar').disabled=false;$('resAtras').disabled=false});

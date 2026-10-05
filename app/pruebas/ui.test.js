@@ -116,7 +116,8 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
         secretos[p.split('/').pop()]=abierto?Buffer.from(abierto).toString():'<<ilegible>>';return R(201,null)}
       if(p.includes('/actions/secrets/')&&m==='DELETE'){secretos[p.split('/').pop()]='<<borrado>>';return R(204,null)}
       if(p.endsWith('/dispatches')){despachos.push(p.split('/')[6]);return R(204,null)}
-      if(p.endsWith('/instalar.yml/runs'))return R(200,{workflow_runs:[{status:'completed',conclusion:'success',created_at:new Date().toISOString(),html_url:'https://github.com/x'}]});
+      if(p.endsWith('/instalar.yml/runs')){const enCurso=runsVistos++===0;return R(200,{workflow_runs:[{id:77,status:enCurso?'in_progress':'completed',conclusion:enCurso?null:'success',created_at:new Date().toISOString(),html_url:'https://github.com/x'}]})}
+      if(p.endsWith('/actions/runs/77/jobs'))return R(200,{jobs:[{steps:[{name:'Revisar secretos',status:'completed'},{name:'Subdominio workers.dev',status:'completed'},{name:'Desplegar Worker',status:'in_progress'},{name:'Comprobar y guardar la dirección',status:'queued'}]}]});
       if(p.endsWith('/contents/kumo.json'))return R(200,{content:Buffer.from(JSON.stringify({url:appUrl})).toString('base64')});
     }
     if(url.startsWith(appUrl)){
@@ -127,7 +128,7 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
     }
     return R(404,{message:'no mock '+url});
   };
-  const abiertos=[];
+  const abiertos=[];let runsVistos=0;
   const nativo=w=>({estado:()=>'{}',barras(){},abrirUrl(u){abiertos.push(u)},config(){},
     http(id,met,url,cab,cuerpo){const h=JSON.parse(cab);let st=200,dat={};
       if(url.includes('/accounts'))dat=h.Authorization==='Bearer cf-bueno'?{success:true,result:[{id:'acc123456789',name:'Cuenta de Amigo'}]}:{success:false,result:null};
@@ -174,7 +175,12 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   ok(d.querySelector('.paso.activo').dataset.paso==='resumen','resumen');
   ok(d.querySelectorAll('#resumen .badge.buy').length===4,'resumen con 4 OK');
   click(d,'#instalar');
-  for(let i=0;i<40&&d.querySelector('.paso.activo').dataset.paso!=='fin';i++)await espera(200);
+  const pcts=[],pasosVistos=[];
+  for(let i=0;i<80&&d.querySelector('.paso.activo').dataset.paso!=='fin';i++){pcts.push(parseInt(d.getElementById('instPct').textContent));pasosVistos.push([...d.querySelectorAll('#instLog div')].map(x=>x.textContent).join('|'));await espera(200)}
+  ok(!d.getElementById('instProg').classList.contains('oculto'),'instalación: barra de progreso visible');
+  ok(pcts.every((p,i)=>i===0||p>=pcts[i-1]),'instalación: el porcentaje nunca retrocede ('+[...new Set(pcts)].join('→')+')');
+  ok(pcts.includes(58)&&pasosVistos.some(t=>/Desplegar Worker \(3\/4\)/.test(t)),'instalación: avanza según los pasos reales de GitHub Actions (2/4 → 58%)');
+  ok(d.getElementById('instPct').textContent==='100%'&&d.getElementById('instBarra').style.width==='100%'&&d.getElementById('instProg').classList.contains('ok'),'instalación: termina en 100%');
   console.log('   log:',[...d.querySelectorAll('#instLog div')].map(x=>x.textContent).join(' | '));
   ok(d.querySelector('.paso.activo').dataset.paso==='fin','instalación completa → ¡NUBE ONLINE!');
   const S=w.__kumo.S;
