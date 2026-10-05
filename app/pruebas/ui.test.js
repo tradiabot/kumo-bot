@@ -134,6 +134,7 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
       if(url.includes('/accounts'))dat=h.Authorization==='Bearer cf-bueno'?{success:true,result:[{id:'acc123456789',name:'Cuenta de Amigo'}]}:{success:false,result:null};
       else if(url==='https://api.groq.com/openai/v1/models'){if(h.Authorization==='Bearer gsk_bueno')dat={data:[{id:'m1'},{id:'m2'}]};else{st=401;dat={error:'bad'}}}
       else if(url==='https://api.kilo.ai/api/gateway/models'){if(h.Authorization){st=400}else dat={data:[{id:'kilo-auto/free'},{id:'nvidia/nemotron-3-super-120b-a12b:free'}]}}
+      else if(url==='https://generativelanguage.googleapis.com/v1beta/openai/models'){if(h.Authorization==='Bearer AIza-bueno')dat={data:[{id:'models/gemini-2.5-flash'},{id:'models/gemini-3.6-flash-lite'},{id:'models/gemini-3.6-flash'},{id:'models/text-embedding-004'}]};else{st=400;dat={error:'API key not valid'}}}
       else if(url==='https://ia.ejemplo.com/v1/models')dat={data:[{id:'modelo-a'},{id:'modelo-b'}]};
       else st=404;
       setTimeout(()=>w.kumoHttp(id,st,JSON.stringify(dat)),5)}});
@@ -145,6 +146,7 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   ok(d.querySelector('.paso.activo').dataset.paso==='gh','tras el tutorial continúa al paso de GitHub');
   d.getElementById('ghToken').value='ghp_prueba';click(d,'#ghSig');await espera(600);
   ok(d.querySelector('.paso.activo').dataset.paso==='cf','GitHub validado → Cloudflare ('+d.getElementById('ghValida').textContent+')');
+  ok(d.getElementById('cfMantener').classList.contains('oculto'),'nube nueva: sin botón «mantener Cloudflare»');
   d.getElementById('cfToken').value='cf-malo';click(d,'#cfSig');await espera(60);
   ok(/rechazó/.test(d.getElementById('cfValida').textContent),'token de Cloudflare inválido detectado');
   d.getElementById('cfToken').value='cf-bueno';click(d,'#cfSig');await espera(600);
@@ -208,6 +210,28 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   ok(git.join('|')==='blob:cHJpbnQoMSk=|tree:base1:runner/exchanges.py=blobN|commit:base1|ref:comN','ACTUALIZAR NUBE copia solo lo que cambió: '+git.join('|'));
   ok(despachos.slice(-1)[0]==='instalar.yml','y vuelve a desplegar la nube');
   ok(sinToken.length===0,'actualizar nube con token');
+  // ---- Cambiar claves: mismo GitHub y Cloudflare, otra IA, exchange igual; trae el código nuevo y reinstala
+  git.length=0;for(const k in secretos)delete secretos[k];
+  click(d,'#cambiarClaves');await espera(20);
+  click(d,'#ghSig');await espera(600);
+  ok(d.querySelector('.paso.activo').dataset.paso==='cf'&&!d.getElementById('cfMantener').classList.contains('oculto'),'cambiar claves: también pasa por Cloudflare, con «mantener»');
+  click(d,'#cfMantener');ok(d.querySelector('.paso.activo').dataset.paso==='ia','cambiar claves: Cloudflare se mantiene');
+  prov('google');d.getElementById('iaKey').value='AIza-malo';click(d,'#iaSig');await espera(60);
+  ok(/respondió 400/.test(d.getElementById('iaValida').textContent),'IA: clave de Google inválida detectada');
+  d.getElementById('iaKey').value='AIza-bueno';click(d,'#iaSig');await espera(600);
+  ok(d.querySelector('.paso.activo').dataset.paso==='ex'&&!d.getElementById('exMantener').classList.contains('oculto'),'cambiar claves: Gemini validado → exchange con «mantener»');
+  click(d,'#exMantener');
+  ok(d.querySelector('.paso.activo').dataset.paso==='resumen'&&(d.getElementById('resumen').textContent.match(/sin cambios/g)||[]).length===2&&/REINSTALAR/.test(d.getElementById('instalar').textContent),'resumen: Cloudflare y exchange sin cambios, botón reinstalar');
+  const exAntes=w.__kumo.S.exchange,desp0=despachos.length;
+  click(d,'#instalar');
+  for(let i=0;i<60&&d.querySelector('.paso.activo').dataset.paso!=='fin';i++)await espera(200);
+  const logCl=[...d.querySelectorAll('#instLog div')].map(x=>x.textContent).join(' | ');console.log('   log:',logCl);
+  ok(d.querySelector('.paso.activo').dataset.paso==='fin','cambiar claves: reinstalación completa');
+  ok(/Código actualizado \(1 archivo\)/.test(logCl)&&git.join('|').endsWith('ref:comN'),'cambiar claves: trae el código nuevo antes de reinstalar');
+  ok(secretos.IA_URL==='https://generativelanguage.googleapis.com/v1beta/openai'&&secretos.IA_CLAVE==='AIza-bueno','cambiar claves: IA de Google guardada');
+  ok(secretos.IA_MODELOS==='gemini-3.6-flash,gemini-2.5-flash','Gemini: usa los modelos que Google lista hoy ('+secretos.IA_MODELOS+')');
+  ok(!('EXCHANGE_ID' in secretos)&&!('EXCHANGE_SECRET' in secretos)&&!('CLOUDFLARE_API_TOKEN' in secretos)&&w.__kumo.S.exchange===exAntes,'cambiar claves: no toca el exchange ni Cloudflare');
+  ok(despachos.slice(desp0).join()==='instalar.yml,ciclo.yml','cambiar claves: reinstala y lanza un ciclo');
   ok(errores.length===0,'sin errores JS: '+errores.join(' | '));
  }
  console.log(fallos?`\n${fallos} FALLOS`:'\nTODO OK');process.exit(fallos?1:0);

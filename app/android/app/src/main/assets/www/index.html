@@ -424,6 +424,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
       <div id="cfValida" class="valida"></div>
     </div>
     <div class="onb-pie"><button data-ir="gh">◀</button><button class="primary" id="cfSig">VALIDAR ▶</button></div>
+    <button class="ghost small solo-claves" id="cfMantener" style="margin-top:8px">MANTENER MI CLOUDFLARE</button>
   </section>
 
   <section class="paso" data-paso="ia">
@@ -460,6 +461,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
       <div id="exValida" class="valida"></div>
     </div>
     <div class="onb-pie"><button data-ir="ia">◀</button><button class="primary" id="exSig">SIGUIENTE ▶</button></div>
+    <button class="ghost small solo-claves" id="exMantener" style="margin-top:8px">MANTENER MI EXCHANGE Y SUS CLAVES</button>
   </section>
 
   <section class="paso" data-paso="resumen">
@@ -648,7 +650,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.3.1';
+var APP_VERSION='1.3.2';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -733,6 +735,7 @@ function irPaso(p){
   var i=ORDEN.indexOf(p);$('puntos').innerHTML=ORDEN.map(function(_,k){return '<i class="'+(k<=i?'on':'')+'"></i>'}).join('');
   $('puntos').style.visibility=i<0?'hidden':'visible';
   $('onbSaltar').style.visibility=(S.url||S.demo)?'visible':'hidden';
+  document.querySelectorAll('.solo-claves').forEach(function(b){b.classList.toggle('oculto',modoAsistente!=='claves')});
   if(p==='resumen')pintarResumen();
   if(p==='ex')pintarExchange();
   $('onb').scrollTop=0;
@@ -769,11 +772,12 @@ $('ghSig').onclick=function(){
     var scopes=(r.headers.get('x-oauth-scopes')||'');
     if(scopes&&(!/\brepo\b/.test(scopes)||!/\bworkflow\b/.test(scopes)))throw new Error('Al token le faltan permisos: marca «repo» y «workflow»');
     W.gh={token:t,login:r.data.login};v.className='valida ok';v.textContent='✔ Hola, '+r.data.login;
-    setTimeout(function(){irPaso(modoAsistente==='claves'?'ia':'cf')},450);
+    setTimeout(function(){irPaso('cf')},450);
   }).catch(function(e){v.className='valida bad';v.textContent='✖ '+traduce(e)});
 };
 
 // -- Paso Cloudflare
+$('cfMantener').onclick=function(){delete W.cf;irPaso('ia')};
 $('cfSig').onclick=function(){
   var t=$('cfToken').value.trim(),v=$('cfValida');
   if(W.cf&&W.cf.token===t&&$('cfCuenta').value){W.cf.cuenta=$('cfCuenta').value;irPaso('ia');return}
@@ -801,7 +805,7 @@ var IAS=[
    nota:'No necesitas cuenta ni clave: funciona al instante. Límite: unas 200 consultas por hora. Si algún día se satura, cámbiate a Groq o Google.'},
   {id:'groq',n:'Groq',url:'https://api.groq.com/openai/v1',m:'qwen/qwen3.8-27b,openai/gpt-oss-120b,llama-3.3-70b-versatile',link:'https://console.groq.com/keys',ph:'gsk_…',
    nota:'Cuenta gratis con correo o Google → «Create API Key» → copia la clave (empieza por gsk_) y pégala. 1.000 consultas al día.'},
-  {id:'google',n:'Google AI Studio (Gemini)',url:'https://generativelanguage.googleapis.com/v1beta/openai',m:'gemini-3.7-flash',link:'https://aistudio.google.com/app/apikey',ph:'AIza…',
+  {id:'google',n:'Google AI Studio (Gemini)',url:'https://generativelanguage.googleapis.com/v1beta/openai',m:'gemini-3.7-flash',fam:/^gemini-\d+(\.\d+)?-flash$/,link:'https://aistudio.google.com/app/apikey',ph:'AIza…',
    nota:'Con tu cuenta de Google → «Create API key». 1.500 consultas al día. En el plan gratis Google puede usar lo que envías para mejorar sus modelos (solo son precios e indicadores).'},
   {id:'openrouter',n:'OpenRouter',url:'https://openrouter.ai/api/v1',m:'openrouter/free',link:'https://openrouter.ai/workspaces/default/keys',ph:'sk-or-…',
    nota:'Cuenta con correo → crea una clave. Gratis: 50 consultas al día, justo para un ciclo cada 30 min (el Radar puede quedarse sin cupo).'},
@@ -834,6 +838,13 @@ $('iaSig').onclick=function(){
     if(r.status!==200)throw new Error('El proveedor respondió '+r.status+(r.status===404?': revisa la URL':''));
     var ids=((r.data&&r.data.data)||[]).map(function(m){return String(m.id||'').replace(/^models\//,'')});
     if(x.id==='otro'&&ids.length&&ids.indexOf(modelos)<0)throw new Error('Ese modelo no está en su lista. Algunos: '+ids.slice(0,4).join(', '));
+    if(x.id!=='otro'&&ids.length){
+      // Solo los modelos que el proveedor lista hoy; si ninguno coincide, los más nuevos de su familia.
+      var hay=modelos.split(',').filter(function(m){return ids.indexOf(m)>=0});
+      var fam=x.fam?ids.filter(function(i){return x.fam.test(i)}).sort(function(a,b){return parseFloat(b.split('-')[1])-parseFloat(a.split('-')[1])}):[];
+      fam.forEach(function(m){if(hay.indexOf(m)<0)hay.push(m)});
+      if(hay.length)modelos=hay.slice(0,3).join(',');
+    }
     W.ia={url:url,modelos:modelos,clave:k,nombre:x.id==='otro'?url.replace(/^https?:\/\/(api\.)?/,'').split('/')[0]:x.n.split(' ·')[0]};
     v.className='valida ok';v.textContent='✔ IA lista: '+W.ia.nombre+(ids.length?' ('+ids.length+' modelos)':'');setTimeout(function(){irPaso('ex')},450);
   }).catch(function(e){v.className='valida bad';v.textContent='✖ '+traduce(e)});
@@ -862,6 +873,7 @@ function pintarExchange(){
   $('exClaves').classList.toggle('oculto',$('exSinClaves').checked);
   $('exKeyT').textContent=x.k||'API key';$('exSecretT').textContent=x.s||'Secret';
 }
+$('exMantener').onclick=function(){W.ex={mantener:true,nombre:S.exchange||'tu exchange'};$('exValida').textContent='';irPaso('resumen')};
 $('exId').onchange=pintarExchange;$('exSinClaves').onchange=pintarExchange;
 $('exSig').onclick=function(){
   var x=exSel(),v=$('exValida'),id=x.id==='otro'?$('exOtro').value.trim().toLowerCase():x.id;
@@ -882,11 +894,11 @@ function pintarResumen(){
   var cambio=modoAsistente==='claves';
   $('resumen').innerHTML=
     fila('GitHub',W.gh?('@'+esc(W.gh.login)+' · repositorio privado'):'falta',!!W.gh)+
-    (cambio?'':fila('Cloudflare',W.cf?'cuenta '+esc(W.cf.cuenta.slice(0,8))+'…':'falta',!!W.cf))+
+    fila('Cloudflare',W.cf?'cuenta '+esc(W.cf.cuenta.slice(0,8))+'…':(cambio?'sin cambios':'falta'),!!W.cf)+
     fila('IA',W.ia?esc(W.ia.nombre):(W.ia===''?'sin IA':'sin cambios'),!!W.ia)+
-    fila('Exchange',W.ex?esc(W.ex.nombre)+' · '+esc(W.ex.quote)+(W.ex.key?' · con claves':' · solo simulación'):'falta',!!W.ex)+
-    '<p class="notice">'+(cambio?'Actualizo los secretos de tu repositorio y reinstalo la nube con ellos.':'Voy a crear tu repositorio privado, guardar las claves cifradas, desplegar tu nube en Cloudflare y lanzar el primer ciclo en <b>simulación</b>.')+'</p>';
-  $('instalar').textContent=cambio?'🔐 GUARDAR CLAVES':'☁️ CREAR MI NUBE';
+    fila('Exchange',!W.ex?'falta':W.ex.mantener?esc(W.ex.nombre)+' · sin cambios':esc(W.ex.nombre)+' · '+esc(W.ex.quote)+(W.ex.key?' · con claves':' · solo simulación'),!!W.ex&&!W.ex.mantener)+
+    '<p class="notice">'+(cambio?'Traigo el código más reciente de Kumo a tu repositorio, cambio solo las claves que tocaste y reinstalo tu nube sobre el mismo GitHub'+(W.cf?' y tu nueva cuenta de Cloudflare':' y Cloudflare')+'. Tus ajustes se conservan.':'Voy a crear tu repositorio privado, guardar las claves cifradas, desplegar tu nube en Cloudflare y lanzar el primer ciclo en <b>simulación</b>.')+'</p>';
+  $('instalar').textContent=cambio?'🔐 GUARDAR Y REINSTALAR':'☁️ CREAR MI NUBE';
 }
 // Barra de progreso de la instalación: nunca retrocede.
 var progN=0;
@@ -970,11 +982,11 @@ $('instalar').onclick=function(){
   progN=0;$('instProg').classList.remove('oculto');progreso(2);
   var owner=W.gh.login,repo=$('repoNombre').value.trim()||'kumo-nube',plantilla=$('plantilla').value.trim()||PLANTILLA,rama='main';
   var appToken=S.token&&S.gh&&S.gh.owner===owner&&S.gh.repo===repo?S.token:aleatorio();
-  var t0;
+  var t0,reutilizado=false;
   logI('¡Iniciando secuencia de despegue!');
   var l1=logI('Preparando tu repositorio privado…');
   gh('GET','/repos/'+owner+'/'+repo,null,W.gh.token).then(function(r){
-    if(r.status===200){l1.textContent='Repositorio '+owner+'/'+repo+' ya existe: lo reutilizo';l1.className='ok';progreso(18);rama=r.data.default_branch||'main';return}
+    if(r.status===200){reutilizado=true;l1.textContent='Repositorio '+owner+'/'+repo+' ya existe: lo reutilizo';l1.className='ok';progreso(18);rama=r.data.default_branch||'main';return}
     if(modoAsistente==='claves')throw new Error('No encuentro '+owner+'/'+repo);
     return gh('POST','/repos/'+plantilla+'/generate',{owner:owner,name:repo,private:true,description:'Mi nube de Kumo Bot ☁️'},W.gh.token).then(function(r){
       okGh(r,'Crear repositorio desde '+plantilla);rama=r.data.default_branch||'main';
@@ -991,10 +1003,16 @@ $('instalar').onclick=function(){
   }).then(function(){
     S.gh={token:W.gh.token,owner:owner,repo:repo,rama:rama};guardarS();
     var l=logI('Cifrando y guardando tus claves en GitHub…');
-    var sec={EXCHANGE_ID:W.ex.id,EXCHANGE_API_KEY:W.ex.key||null,EXCHANGE_SECRET:W.ex.secret||null,EXCHANGE_PASSWORD:W.ex.pass||null,KUMO_APP_TOKEN:appToken,KUMO_RUNNER_TOKEN:aleatorio()};
+    var sec={KUMO_APP_TOKEN:appToken,KUMO_RUNNER_TOKEN:aleatorio()};
+    if(!W.ex.mantener){sec.EXCHANGE_ID=W.ex.id;sec.EXCHANGE_API_KEY=W.ex.key||null;sec.EXCHANGE_SECRET=W.ex.secret||null;sec.EXCHANGE_PASSWORD=W.ex.pass||null}
     if(W.ia!==undefined){var ia=W.ia||{};sec.IA_URL=ia.url||null;sec.IA_MODELOS=ia.modelos||null;sec.IA_CLAVE=ia.clave||null;sec.GROQ_API_KEY=null}
     if(W.cf){sec.CLOUDFLARE_API_TOKEN=W.cf.token;sec.CLOUDFLARE_ACCOUNT_ID=W.cf.cuenta}
     return ponerSecretos(owner,repo,sec,function(f){progreso(18+12*f)}).then(function(){l.className='ok';l.textContent='Claves guardadas cifradas ('+Object.keys(sec).length+' secretos)';progreso(30)});
+  }).then(function(){
+    // Un repositorio que ya existía puede tener código viejo que no entiende las claves nuevas.
+    if(!reutilizado)return;
+    var l=logI('Trayendo el código más reciente de Kumo…');
+    return actualizarCodigoNube(owner,repo,rama,function(t){l.textContent=t}).then(function(n){l.className='ok';l.textContent=n?'Código actualizado ('+n+(n===1?' archivo)':' archivos)'):'Tu código ya estaba al día'});
   }).then(function(){
     var l=logI('Lanzando la instalación en Cloudflare…');t0=Date.now();
     return lanzarWorkflow(owner,repo,'instalar.yml',rama).then(function(){progreso(33);return esperarRun(owner,repo,'instalar.yml',t0,l,function(f){progreso(33+50*f)})}).then(function(){l.className='ok';l.textContent='Nube desplegada en Cloudflare';progreso(83)});
@@ -1007,10 +1025,10 @@ $('instalar').onclick=function(){
   }).then(function(url){
     var l=logI('Probando la conexión…');
     return fetch(url+'/api/estado',{headers:{Authorization:'Bearer '+appToken}}).then(function(r){if(!r.ok)throw new Error('La nube respondió HTTP '+r.status);l.className='ok';l.textContent='Conexión segura OK';progreso(92);
-      S.url=url;S.token=appToken;S.demo=false;S.exchange=W.ex.nombre;guardarS();if(NATIVO&&NATIVO.config)NATIVO.config(url,appToken);});
+      S.url=url;S.token=appToken;S.demo=false;if(!W.ex.mantener)S.exchange=W.ex.nombre;guardarS();if(NATIVO&&NATIVO.config)NATIVO.config(url,appToken);});
   }).then(function(){
-    var l=logI('Configurando la moneda base y lanzando el primer ciclo…');
-    return api('/api/config',W.ex.id==='hyperliquid'?{quote:W.ex.quote,monto_min:11,monto_max:30}:{quote:W.ex.quote}).then(function(){return lanzarWorkflow(owner,repo,'ciclo.yml',rama)}).then(function(){l.className='ok';l.textContent='Primer ciclo en marcha (tarda 1-2 min)';progreso(97)});
+    var l=logI(W.ex.mantener?'Lanzando un ciclo con la configuración nueva…':'Configurando la moneda base y lanzando el primer ciclo…');
+    return (W.ex.mantener?Promise.resolve():api('/api/config',W.ex.id==='hyperliquid'?{quote:W.ex.quote,monto_min:11,monto_max:30}:{quote:W.ex.quote})).then(function(){return lanzarWorkflow(owner,repo,'ciclo.yml',rama)}).then(function(){l.className='ok';l.textContent=(W.ex.mantener?'Ciclo':'Primer ciclo')+' en marcha (tarda 1-2 min)';progreso(97)});
   }).then(function(){
     logI('¡Despegue completado!','ok');progreso(100,'ok');W={};
     ['ghToken','cfToken','iaKey','iaUrl','iaModelo','exKey','exSecret','exPass'].forEach(function(i){$(i).value=''});
@@ -1284,7 +1302,7 @@ $('reiniciarSim').onclick=function(){confirmar('Reiniciar simulación','Borra la
 $('cambiarClaves').onclick=function(){
   if(S.demo){toast('Crea tu nube primero');abrirOnb('inicio');return}
   W={};if(S.gh&&S.gh.repo)$('repoNombre').value=S.gh.repo;
-  abrirOnb('gh','claves');toast('Valida GitHub y cambia solo lo que necesites');
+  abrirOnb('gh','claves');toast('Valida GitHub y cambia solo lo que necesites: lo demás se mantiene');
 };
 // Tu repo es una copia de la plantilla: este paso le trae el código nuevo (runner, worker y
 // workflows) en un solo commit y vuelve a desplegar. No toca kumo.json ni tus secretos.
