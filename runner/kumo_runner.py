@@ -160,6 +160,8 @@ def saldo_real(base, exchange_id, quote, saldos=None, notas=None):
         saldos = saldos if saldos is not None else base.saldos()
     except ErrorExchange as e:
         return {"error": str(e)[:200]}
+    if getattr(base, "aviso_cuenta", None):
+        notas.append(base.aviso_cuenta)
     estables = sum(v for k, v in saldos.items() if k == quote or k in ESTABLES)
     out = {"libre": round(saldos.get(quote, 0.0), 2), "estables": round(estables, 2),
            "saldos": {k: round(v, 8) for k, v in sorted(saldos.items(), key=lambda kv: -kv[1])[:12]}}

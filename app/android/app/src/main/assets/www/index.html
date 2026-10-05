@@ -651,7 +651,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.3.3';
+var APP_VERSION='1.3.4';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -860,7 +860,7 @@ var EXCHANGES=[
   {id:'coinbase',n:'Coinbase Advanced',q:['USDC','USD'],nota:'Coinbase Developer Platform → API key «Trade». API key = nombre de la clave; Secret = clave privada completa.'},
   {id:'bitstamp',n:'Bitstamp',q:['USD','USDT','EUR'],nota:'Bitstamp → Settings → API Access. Activa solo balance y trading.'},
   {id:'hyperliquid',n:'Hyperliquid (sin KYC · DEX)',q:['USDC'],k:'Dirección de tu cuenta (0x…)',s:'Clave privada de la API wallet',
-   nota:'Sin KYC: te conectas con una billetera, no con tus datos. En app.hyperliquid.xyz → More → API crea una «API wallet»: puede operar pero NO retirar. Pega aquí la dirección de tu cuenta principal y la clave privada de esa API wallet. Orden mínima: 10 USDC.'},
+   nota:'Sin KYC: te conectas con una billetera, no con tus datos. En app.hyperliquid.xyz → More → API: genera una «API wallet», copia su clave privada y pulsa «Authorize API Wallet» (si no la autorizas, Hyperliquid no la reconoce). Esa wallet puede operar pero NO retirar. Aquí pega la dirección de tu cuenta principal (la de tu billetera, donde está tu saldo) y la clave privada de la API wallet. Orden mínima: 10 USDC.'},
   {id:'mexc',n:'MEXC (sin KYC)',q:['USDT'],nota:'MEXC permite abrir cuenta y operar sin verificar identidad (los retiros sin KYC tienen límite diario). MEXC → API Management: activa solo Spot trading, sin retiros.'},
   {id:'gate',n:'Gate',q:['USDT'],nota:'Gate → API Management. Permiso Spot trade, sin retiros.'},
   {id:'otro',n:'Otro (id de ccxt)',q:['USDT','USDC','USD','EUR'],nota:'Kumo usa ccxt: escribe el id del exchange tal como aparece en ccxt.'}
@@ -1013,7 +1013,7 @@ $('instalar').onclick=function(){
     // Un repositorio que ya existía puede tener código viejo que no entiende las claves nuevas.
     if(!reutilizado)return;
     var l=logI('Trayendo el código más reciente de Kumo…');
-    return actualizarCodigoNube(owner,repo,rama,function(t){l.textContent=t}).then(function(n){l.className='ok';l.textContent=n?'Código actualizado ('+n+(n===1?' archivo)':' archivos)'):'Tu código ya estaba al día'});
+    return actualizarCodigoNube(owner,repo,rama,function(t){l.textContent=t}).then(function(n){l.className='ok';l.textContent=n<0?'Tu nube ya tiene el código más nuevo':n?'Código actualizado ('+n+(n===1?' archivo)':' archivos)'):'Tu código ya estaba al día'});
   }).then(function(){
     var l=logI('Lanzando la instalación en Cloudflare…');t0=Date.now();
     return lanzarWorkflow(owner,repo,'instalar.yml',rama).then(function(){progreso(33);return esperarRun(owner,repo,'instalar.yml',t0,l,function(f){progreso(33+50*f)})}).then(function(){l.className='ok';l.textContent='Nube desplegada en Cloudflare';progreso(83)});
@@ -1320,14 +1320,26 @@ $('cambiarClaves').onclick=function(){
 // Tu repo es una copia de la plantilla: este paso le trae el código nuevo (runner, worker y
 // workflows) en un solo commit y vuelve a desplegar. No toca kumo.json ni tus secretos.
 var RUTAS_NUBE=/^(runner\/|worker\/|\.github\/workflows\/)/;
+// Versión del código de la nube (runner/version.txt). Sin archivo = versión vieja (0).
+function versionNum(v){return String(v||'0').trim().split('.').reduce(function(a,x){return a*1000+(parseInt(x,10)||0)},0)}
+function leerVersion(ruta,arbol){
+  var f=arbol.filter(function(x){return x.path==='runner/version.txt'})[0];
+  if(!f)return Promise.resolve('0');
+  return gh('GET',ruta+'/git/blobs/'+f.sha).then(function(r){okGh(r,'runner/version.txt');return decodeURIComponent(escape(atob(String(r.data.content).replace(/\s/g,'')))).trim()});
+}
+// Devuelve cuántos archivos copió, o -1 si tu nube ya tiene código más nuevo que la plantilla
+// (nunca se degrada: eso dejaba nubes con código viejo que ignoraba las claves nuevas).
 function actualizarCodigoNube(owner,repo,rama,aviso){
-  var dest='/repos/'+owner+'/'+repo,orig='/repos/'+PLANTILLA,refPl,tree,base,cambios=[];
+  var dest='/repos/'+owner+'/'+repo,orig='/repos/'+PLANTILLA,refPl,tree,arbolPl,base,cambios=[];
   aviso('Leyendo la plantilla…');
   return gh('GET',orig).then(function(r){okGh(r,'Plantilla');refPl=r.data.default_branch||'main';
-    return gh('GET',orig+'/git/trees/'+refPl+'?recursive=1')}).then(function(r){okGh(r,'Archivos de la plantilla');tree=r.data.tree.filter(function(x){return x.type==='blob'&&RUTAS_NUBE.test(x.path)});
+    return gh('GET',orig+'/git/trees/'+refPl+'?recursive=1')}).then(function(r){okGh(r,'Archivos de la plantilla');arbolPl=r.data.tree;tree=r.data.tree.filter(function(x){return x.type==='blob'&&RUTAS_NUBE.test(x.path)});
     return gh('GET',dest+'/git/ref/heads/'+rama)}).then(function(r){okGh(r,'Tu repositorio');base=r.data.object.sha;
     return gh('GET',dest+'/git/trees/'+base+'?recursive=1')}).then(function(r){okGh(r,'Tus archivos');
-    var mios={};r.data.tree.forEach(function(x){mios[x.path]=x.sha});
+    var arbolMio=r.data.tree;
+    return Promise.all([leerVersion(orig,arbolPl),leerVersion(dest,arbolMio)]).then(function(v){
+    if(versionNum(v[0])<versionNum(v[1])){aviso('Tu nube ya tiene código más nuevo (v'+v[1]+') que la plantilla (v'+v[0]+'): no la toco');return -1}
+    var mios={};arbolMio.forEach(function(x){mios[x.path]=x.sha});
     // mismo sha de blob = mismo contenido: solo se copian los archivos que cambiaron
     var pend=tree.filter(function(x){return mios[x.path]!==x.sha});
     if(!pend.length)return null;
@@ -1341,6 +1353,7 @@ function actualizarCodigoNube(owner,repo,rama,aviso){
     return sig().then(function(){return gh('POST',dest+'/git/trees',{base_tree:base,tree:cambios})}).then(function(r){okGh(r,'Árbol');
       return gh('POST',dest+'/git/commits',{message:'Actualizar Kumo desde '+PLANTILLA+' ('+cambios.length+' archivos)',tree:r.data.sha,parents:[base]})}).then(function(r){okGh(r,'Commit');
       return gh('PATCH',dest+'/git/refs/heads/'+rama,{sha:r.data.sha})}).then(function(r){okGh(r,'Subir cambios');return cambios.length});
+    });
   });
 }
 $('actualizarNube').onclick=function(){
@@ -1348,7 +1361,7 @@ $('actualizarNube').onclick=function(){
   confirmar('Actualizar nube','Copia a tu repositorio el código más reciente de Kumo (bot, nube y ciclos) y vuelve a desplegar tu nube. Tus claves, datos y ajustes se conservan.','ACTUALIZAR').then(function(ok){
     if(!ok)return;var b=$('actualizarNube');b.disabled=true;
     actualizarCodigoNube(S.gh.owner,S.gh.repo,S.gh.rama||'main',function(t){b.textContent=t.length>28?t.slice(0,27)+'…':t}).then(function(n){
-      return lanzarWorkflow(S.gh.owner,S.gh.repo,'instalar.yml',S.gh.rama||'main').then(function(){toast((n?n+' archivos actualizados. ':'Tu código ya estaba al día. ')+'Redesplegando la nube (2-4 min)')});
+      return lanzarWorkflow(S.gh.owner,S.gh.repo,'instalar.yml',S.gh.rama||'main').then(function(){toast((n<0?'Tu nube ya tiene código más nuevo que la plantilla. ':n?n+' archivos actualizados. ':'Tu código ya estaba al día. ')+'Redesplegando la nube (2-4 min)')});
     }).catch(function(e){toast(traduce(e),true)}).then(function(){b.disabled=false;b.textContent='ACTUALIZAR NUBE'});
   });
 };

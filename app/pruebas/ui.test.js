@@ -99,7 +99,8 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
       if(p==='/repos/tradiabot/kumo-bot/git/trees/main')return R(200,{tree:[{path:'runner',type:'tree',sha:'d1'},{path:'runner/exchanges.py',type:'blob',mode:'100644',sha:'nuevo1'},{path:'worker/src/index.ts',type:'blob',mode:'100644',sha:'igual2'},{path:'README.md',type:'blob',mode:'100644',sha:'readme'}]});
       if(p==='/repos/tradiabot/kumo-bot/git/blobs/nuevo1')return R(200,{content:'cHJp\nbnQoMSk=',encoding:'base64'});
       if(p==='/repos/amigo/kumo-nube/git/ref/heads/main')return R(200,{object:{sha:'base1'}});
-      if(p==='/repos/amigo/kumo-nube/git/trees/base1')return R(200,{tree:[{path:'runner/exchanges.py',type:'blob',sha:'viejo1'},{path:'worker/src/index.ts',type:'blob',sha:'igual2'},{path:'kumo.json',type:'blob',sha:'k'}]});
+      if(p==='/repos/amigo/kumo-nube/git/blobs/v134')return R(200,{content:Buffer.from('1.3.4\n').toString('base64'),encoding:'base64'});
+      if(p==='/repos/amigo/kumo-nube/git/trees/base1')return R(200,{tree:[...(nubeNueva?[{path:'runner/version.txt',type:'blob',sha:'v134'}]:[]),{path:'runner/exchanges.py',type:'blob',sha:'viejo1'},{path:'worker/src/index.ts',type:'blob',sha:'igual2'},{path:'kumo.json',type:'blob',sha:'k'}]});
       if(p==='/repos/amigo/kumo-nube/git/blobs'&&m==='POST'){git.push('blob:'+JSON.parse(o.body).content);return R(201,{sha:'blobN'})}
       if(p==='/repos/amigo/kumo-nube/git/trees'&&m==='POST'){const b=JSON.parse(o.body);git.push('tree:'+b.base_tree+':'+b.tree.map(x=>x.path+'='+x.sha).join(','));return R(201,{sha:'treeN'})}
       if(p==='/repos/amigo/kumo-nube/git/commits'&&m==='POST'){git.push('commit:'+JSON.parse(o.body).parents);return R(201,{sha:'comN'})}
@@ -128,7 +129,7 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
     }
     return R(404,{message:'no mock '+url});
   };
-  const abiertos=[];let runsVistos=0;
+  const abiertos=[];let runsVistos=0,nubeNueva=false;
   const nativo=w=>({estado:()=>'{}',barras(){},abrirUrl(u){abiertos.push(u)},config(){},
     http(id,met,url,cab,cuerpo){const h=JSON.parse(cab);let st=200,dat={};
       if(url.includes('/accounts'))dat=h.Authorization==='Bearer cf-bueno'?{success:true,result:[{id:'acc123456789',name:'Cuenta de Amigo'}]}:{success:false,result:null};
@@ -212,6 +213,11 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   ok(git.join('|')==='blob:cHJpbnQoMSk=|tree:base1:runner/exchanges.py=blobN|commit:base1|ref:comN','ACTUALIZAR NUBE copia solo lo que cambió: '+git.join('|'));
   ok(despachos.slice(-1)[0]==='instalar.yml','y vuelve a desplegar la nube');
   ok(sinToken.length===0,'actualizar nube con token');
+  // ---- Una nube con código más nuevo que la plantilla no se degrada
+  git.length=0;nubeNueva=true;click(d,'#actualizarNube');await espera(20);click(d,'#mSi');
+  for(let i=0;i<40&&!/más nuevo/.test(d.body.textContent);i++)await espera(50);
+  ok(git.length===0&&/más nuevo que la plantilla/.test(d.body.textContent),'ACTUALIZAR NUBE no degrada una nube con código más nuevo');
+  nubeNueva=false;await espera(300);
   // ---- Cambiar claves: mismo GitHub y Cloudflare, otra IA, exchange igual; trae el código nuevo y reinstala
   git.length=0;for(const k in secretos)delete secretos[k];
   click(d,'#cambiarClaves');await espera(20);
