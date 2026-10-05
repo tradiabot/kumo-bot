@@ -187,7 +187,12 @@ def main():
         reporte["ok"] = True
     except Exception as e:  # se reporta para que la app lo muestre
         traceback.print_exc()
-        reporte = {"ok": False, "errores": [f"{type(e).__name__}: {str(e)[:300]}"]}
+        # Con qué exchange falló: si el usuario cambia de exchange, la app no
+        # debe mostrar el error viejo como si fuera del nuevo.
+        cfg = remoto.get("config") or {}
+        reporte = {"ok": False, "exchange": os.getenv("EXCHANGE_ID", "kraken").strip().lower() or "kraken",
+                   "modo": "real" if cfg.get("modo") == "real" else "simulacion",
+                   "errores": [f"{type(e).__name__}: {str(e)[:300]}"]}
     reporte["duracion"] = round(time.time() - inicio, 1)
     resp = http("POST", url + "/runner/reporte", token, reporte)
     # Sin saldos ni claves en el log: solo un resumen.

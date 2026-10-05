@@ -14,9 +14,10 @@ export interface Env {
   IA_CLAVE?: string;
   GROQ_API_KEY?: string;
   GROQ_MODEL?: string;
+  // Versión del código de la nube (runner/version.txt), la pone instalar.yml.
+  KUMO_VERSION?: string;
 }
 
-const VERSION = '1.0.0';
 const GROQ_MODELOS = ['qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'llama-3.3-70b-versatile'];
 
 type Json = Record<string, any>;
@@ -122,11 +123,15 @@ async function runnerReporte(env: Env, r: Json): Promise<Response> {
   const estado = await leer<Json>(env, 'estado', {});
   const ciclo = (estado.ciclo || 0) + 1;
   const ahora = Date.now();
-  const historial: [number, number][] = estado.historial || [];
+  let historial: [number, number][] = estado.historial || [];
+  // La gráfica solo compara peras con peras: al cambiar de exchange o entre
+  // simulación y real empieza de cero (si no, 1000 simulados → 10 reales sale -99%).
+  const serie = r.ok ? `${r.exchange}|${r.modo}` : estado.serie;
+  if (r.ok && estado.serie !== serie) historial = [];
   if (r.ok && typeof r.total === 'number') historial.push([ahora, r.total]);
   const { radar, cartera_sim, costos, ...ultimo } = r;
   const nuevo: Json = {
-    ciclo, actualizado: ahora, ultimo: { ...ultimo, ts: ahora },
+    ciclo, actualizado: ahora, serie, ultimo: { ...ultimo, ts: ahora },
     historial: historial.slice(-500),
     runner: { costos: costos ?? estado.runner?.costos ?? {}, cartera_sim: cartera_sim ?? estado.runner?.cartera_sim ?? null },
     radar: Array.isArray(radar) && radar.length ? radar : estado.radar || [],
@@ -246,7 +251,7 @@ async function api(req: Request, env: Env, ruta: string, url: URL): Promise<Resp
     case 'GET /api/estado': {
       const [config, estado] = await Promise.all([leerConfig(env), leer<Json>(env, 'estado', {})]);
       const { runner, radar, ...resto } = estado;
-      return json({ version: VERSION, config, ...resto, costos: runner?.costos || {} });
+      return json({ version: env.KUMO_VERSION || '1.0.0', config, ...resto, costos: runner?.costos || {} });
     }
     case 'GET /api/operaciones':
       return json({ operaciones: await leer<Json[]>(env, 'operaciones', []) });
@@ -318,7 +323,7 @@ export default {
     try {
       if (ruta === '/' || ruta === '/api/salud') {
         const estado = await leer<Json>(env, 'estado', {});
-        return json({ ok: true, nombre: 'kumo-bot', version: VERSION, ciclo: estado.ciclo || 0, ultimo_ciclo: estado.actualizado || null });
+        return json({ ok: true, nombre: 'kumo-bot', version: env.KUMO_VERSION || '1.0.0', ciclo: estado.ciclo || 0, ultimo_ciclo: estado.actualizado || null });
       }
       if (ruta.startsWith('/runner/')) {
         if (!iguales(token(req), env.RUNNER_TOKEN)) return json({ error: 'No autorizado' }, 401);

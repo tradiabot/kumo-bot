@@ -200,6 +200,14 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   ok(d.getElementById('conn').textContent.includes('EN LÍNEA'),'app en línea con la nube nueva');
   await espera(100);const sr=d.getElementById('saldoReal');
   ok(!sr.classList.contains('oculto')&&/Saldo real en hyperliquid/.test(sr.textContent)&&/25,5 USDC en Perps/.test(sr.textContent)&&/HYPE 1,25/.test(sr.textContent)&&/simulación/.test(sr.textContent),'panel: saldo real del exchange visible en simulación, con aviso de Perps ('+sr.textContent.slice(0,80)+')');
+  {const K=w.__kumo,ea=K.datos.estado;ok(K.S.clavesTs>0,'guarda cuándo se cambiaron las claves');
+   K.datos.estado={...ea,actualizado:K.S.clavesTs-3600000,ultimo:{ok:false,exchange:'cryptocom_app',errores:['ErrorExchange: Crypto.com App: claves rechazadas (401)']}};
+   K.pintarEstado();const av=d.getElementById('erroresAviso');
+   ok(/Crypto\.com App/.test(av.textContent)&&/antes de cambiar tus claves/.test(av.textContent),'error de un ciclo anterior al cambio de claves: se marca como viejo');
+   ok(/CRYPTOCOM APP/.test(d.getElementById('topEx').textContent),'la cabecera dice con qué exchange falló ese ciclo');
+   K.datos.estado={...ea,actualizado:Date.now(),ultimo:{ok:false,exchange:'hyperliquid',errores:['ErrorExchange: x']}};K.pintarEstado();
+   ok(!/antes de cambiar/.test(av.textContent),'error de un ciclo nuevo: sin esa nota');
+   K.datos.estado=ea;K.pintarEstado();}
   await espera(300);
   ok(!d.getElementById('updBanda').classList.contains('oculto')&&/v9\.9\.9/.test(d.getElementById('updBanda').textContent),'banda de nueva versión visible');
   ok(d.getElementById('modal').classList.contains('open')&&/v9\.9\.9/.test(d.getElementById('mTitulo').textContent)&&/Novedades de prueba/.test(d.getElementById('mExtra').textContent),'aviso de actualización al entrar a la app (no durante el asistente)');

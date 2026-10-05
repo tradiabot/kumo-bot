@@ -651,7 +651,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.3.4';
+var APP_VERSION='1.3.5';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -1026,7 +1026,7 @@ $('instalar').onclick=function(){
   }).then(function(url){
     var l=logI('Probando la conexión…');
     return fetch(url+'/api/estado',{headers:{Authorization:'Bearer '+appToken}}).then(function(r){if(!r.ok)throw new Error('La nube respondió HTTP '+r.status);l.className='ok';l.textContent='Conexión segura OK';progreso(92);
-      S.url=url;S.token=appToken;S.demo=false;if(!W.ex.mantener)S.exchange=W.ex.nombre;guardarS();if(NATIVO&&NATIVO.config)NATIVO.config(url,appToken);});
+      S.url=url;S.token=appToken;S.demo=false;if(!W.ex.mantener)S.exchange=W.ex.nombre;S.clavesTs=Date.now();guardarS();if(NATIVO&&NATIVO.config)NATIVO.config(url,appToken);});
   }).then(function(){
     var l=logI(W.ex.mantener?'Lanzando un ciclo con la configuración nueva…':'Configurando la moneda base y lanzando el primer ciclo…');
     return (W.ex.mantener?Promise.resolve():api('/api/config',W.ex.id==='hyperliquid'?{quote:W.ex.quote,monto_min:11,monto_max:30}:{quote:W.ex.quote})).then(function(){return lanzarWorkflow(owner,repo,'ciclo.yml',rama)}).then(function(){l.className='ok';l.textContent=(W.ex.mantener?'Ciclo':'Primer ciclo')+' en marcha (tarda 1-2 min)';progreso(97)});
@@ -1129,7 +1129,7 @@ function pintarEstado(){
   }
   $('iaModelo').textContent=c.ia==='off'?'Apagada':((u.ia&&u.ia.modelo)||'—');
   $('pausaBtn').textContent=c.pausado?'REANUDAR':'PAUSAR';$('pausaBtn').className=c.pausado?'primary':'danger';
-  var errs=u.errores||[];$('erroresAviso').classList.toggle('oculto',!errs.length);$('erroresAviso').innerHTML='<b>⚠ Atención</b><br>'+errs.map(esc).join('<br>');
+  var errs=u.errores||[];$('erroresAviso').classList.toggle('oculto',!errs.length);var previo=S.clavesTs&&e.actualizado&&e.actualizado<S.clavesTs;$('erroresAviso').innerHTML='<b>⚠ Atención</b><br>'+errs.map(esc).join('<br>')+(previo?'<br><small>Este aviso es del ciclo de antes de cambiar tus claves. Desaparece cuando tu nube corra el próximo ciclo con las claves nuevas.</small>':'');
   var filas=[];
   (u.ejecutadas||[]).forEach(function(o){filas.push(filaOp(o,true))});
   (u.propuestas||[]).filter(function(p){return !(u.ejecutadas||[]).some(function(o){return o.simbolo===p.simbolo&&o.accion===p.accion})}).forEach(function(p){
@@ -1490,7 +1490,7 @@ aplicarTema(S.tema||'pro');
 $('appVer').textContent='v'+APP_VERSION;
 setTimeout(function(){buscarActualizacion(false)},2500);
 if(!S.onb||(!S.url&&!S.demo)){abrirOnb('hola');if(!S.tuto)abrirTuto(0)}else iniciarApp();
-window.__kumo={tuto:function(){return tutoI},S:S,datos:datos,irPaso:irPaso,irA:irA,W:function(){return W}};
+window.__kumo={tuto:function(){return tutoI},S:S,datos:datos,irPaso:irPaso,irA:irA,W:function(){return W},pintarEstado:pintarEstado};
 })();
 </script>
 </body>
