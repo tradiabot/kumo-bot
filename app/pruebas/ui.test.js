@@ -3,10 +3,10 @@ const WWW=require('path').join(__dirname,'../android/app/src/main/assets/www/');
 const html=fs.readFileSync(WWW+'index.html','utf8').replace('<script src="sellar.js"></script>','<script>'+fs.readFileSync(WWW+'sellar.js','utf8')+'</script>');
 const espera=ms=>new Promise(r=>setTimeout(r,ms));
 let fallos=0;const ok=(c,m)=>{console.log((c?'OK  ':'FALLO ')+m);if(!c)fallos++};
-function crear(fetchMock,nativo){
+function crear(fetchMock,nativo,guardado){
   const errores=[];
   const dom=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://localhost/',beforeParse(w){
-    w.fetch=fetchMock;if(nativo)w.KumoNative=nativo(w);
+    w.fetch=fetchMock;if(nativo)w.KumoNative=nativo(w);if(guardado)w.localStorage.setItem('kumo',JSON.stringify(guardado));
     Object.defineProperty(w,'crypto',{value:nodeCrypto.webcrypto});w.TextEncoder=TextEncoder;w.scrollTo=()=>{};w.Element.prototype.scrollIntoView=()=>{};
     w.addEventListener('error',e=>errores.push(e.message));
   }});
@@ -98,7 +98,38 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   click(d,'.nav [data-target="ia"]');await espera(30);
   ok(/Radar/.test(d.getElementById('senalesHist').textContent)&&/Ciclo #57/.test(d.getElementById('senalesHist').textContent),'historial de señales');
   ok(/Ciclo #58/.test(d.getElementById('iaCab').textContent)&&/nemotron/.test(d.getElementById('iaCab').textContent),'cabecera: ciclo, hora y modelo');
-  click(d,'.nav [data-target="config"]');await espera(20);
+  // ---- Gráficas por activo
+  click(d,'.nav [data-target="cartera"]');await espera(30);
+  ok(d.querySelectorAll('#activos [data-graf]').length===3&&!d.querySelector('#activos [data-graf="USDT"]'),'activos tocables (sin la moneda base)');
+  click(d,'#activos [data-graf="BTC"] .info');await espera(40);
+  const G=()=>d.getElementById('grafCuerpo');
+  ok(d.getElementById('grafModal').classList.contains('open')&&d.getElementById('grafTitulo').textContent==='BTC','tocar BTC abre su gráfica');
+  ok(G().querySelectorAll('svg').length===3&&/RSI 14/.test(G().textContent)&&/MACD/.test(G().textContent),'precio, RSI y MACD dibujados');
+  ok(/100 velas 4H/.test(d.getElementById('grafSub').textContent),'4H por defecto: '+d.getElementById('grafSub').textContent);
+  ok(G().querySelector('.costo')&&/tu costo/.test(G().textContent),'línea de tu costo promedio');
+  ok(/Tienes/.test(d.getElementById('grafPos').textContent)&&/\+3,23%/.test(d.getElementById('grafPos').textContent),'resumen de tu posición');
+  ok(/RSI \d+: zona/.test(G().querySelector('.notice').textContent),'lectura técnica según tu estrategia');
+  const tf4=G().querySelector('path.serie').getAttribute('d');click(d,'#grafTf [data-tf="1d"]');
+  ok(/1D/.test(d.getElementById('grafSub').textContent)&&G().querySelector('path.serie').getAttribute('d')!==tf4&&d.querySelector('#grafTf [data-tf="1d"]').classList.contains('active'),'cambiar a 1D');
+  {const k=w.__kumo;const c=[44.34,44.09,44.15,43.61,44.33,44.83,45.10,45.42,45.84,46.08,45.89,46.03,45.61,46.28,46.28];const rr=k.rsiSerie(c,14);
+   ok(Math.abs(rr[14]-70.46)<0.1&&rr[13]==null,'RSI de Wilder correcto ('+rr[14].toFixed(2)+')');
+   const M=k.macdSerie(Array.from({length:60},(_,i)=>100+i));ok(M.macd[24]==null&&M.macd[25]>0&&M.senal[33]!=null&&Math.abs(M.hist[59])<1e-9,'MACD 12/26/9 alineado');}
+  ok(w.appBack()===true&&!d.getElementById('grafModal').classList.contains('open'),'atrás cierra la gráfica');
+  click(d,'#activos [data-graf="SOL"] .info');await espera(40);click(d,'#grafOrden');await espera(20);
+  ok(d.querySelector('.screen.active').id==='ordenes'&&d.getElementById('onSym').value==='SOL'&&d.getElementById('ordNuevaBox').open,'«Crear orden» desde la gráfica');
+  click(d,'.nav [data-target="ia"]');await espera(30);click(d,'#opiniones [data-graf="ETH"] .info');await espera(40);
+  ok(d.getElementById('grafTitulo').textContent==='ETH'&&G().querySelectorAll('svg').length===3,'gráfica desde las señales de la IA');click(d,'#grafCerrar');
+  // ---- Semáforo
+  click(d,'.nav [data-target="config"]');await espera(60);
+  const fila=k=>d.querySelector('#semLuces [data-sem="'+k+'"]');
+  ok(d.querySelectorAll('#semLuces .sem-fila').length===4,'semáforo con nube, ciclos, IA y exchange');
+  ok(fila('nube').dataset.nivel==='verde'&&fila('ciclos').dataset.nivel==='verde'&&fila('exchange').dataset.nivel==='verde','nube, ciclos y exchange en verde');
+  ok(fila('ia').dataset.nivel==='amarillo'&&/Prueba todos los modelos/.test(d.getElementById('semAyuda').textContent),'IA en amarillo (falló un modelo) con instrucciones');
+  ok(/REVISAR/.test(d.getElementById('semPill').textContent),'resumen del semáforo');
+  click(d,'#semArreglar');for(let i=0;i<40&&!/Vuelvo a revisar/.test(d.getElementById('semDiag').textContent);i++)await espera(30);
+  const dg=d.getElementById('semDiag').textContent;
+  ok(/✗ kilo-auto\/free/.test(dg)&&/queda como modelo principal/.test(dg),'buscar y corregir: prueba cada modelo y deja el que responde');
+  ok(/◎ IA \(demo\)/.test(dg),'la IA explica el diagnóstico');
   click(d,'#modoBtn');await espera(10);click(d,'#mSi');await espera(10);
   d.getElementById('confReal').value='real';click(d,'#mSi');await espera(30);
   ok(w.__kumo.datos.config.modo==='real','dinero real tras doble confirmación con «REAL»');
@@ -285,6 +316,41 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   ok(secretos.IA_MODELOS==='gemini-3.6-flash,gemini-2.5-flash','Gemini: usa los modelos que Google lista hoy ('+secretos.IA_MODELOS+')');
   ok(!('EXCHANGE_ID' in secretos)&&!('EXCHANGE_SECRET' in secretos)&&!('CLOUDFLARE_API_TOKEN' in secretos)&&w.__kumo.S.exchange===exAntes,'cambiar claves: no toca el exchange ni Cloudflare');
   ok(despachos.slice(desp0).join()==='instalar.yml,ciclo.yml','cambiar claves: reinstala y lanza un ciclo');
+  ok(errores.length===0,'sin errores JS: '+errores.join(' | '));
+ }
+ // ---------- 3) Semáforo con fallas reales: ciclos apagados, exchange sin claves, IA caída
+ {
+  const llamadas=[],ahora=Date.now();let habilitado=false;
+  const fetchMock=(url,o={})=>{
+    const m=o.method||'GET',u=new URL(url),p=u.pathname;llamadas.push(m+' '+p);
+    if(u.host==='api.github.com'){
+      if(p.endsWith('/releases/latest'))return R(404,{});
+      if(p==='/repos/amigo/kumo-nube/actions/workflows/ciclo.yml')return R(200,{state:habilitado?'active':'disabled_inactivity'});
+      if(p==='/repos/amigo/kumo-nube/actions/workflows/ciclo.yml/runs')return R(200,{workflow_runs:[]});
+      if(p==='/repos/amigo/kumo-nube/actions/workflows/ciclo.yml/enable'&&m==='PUT'){habilitado=true;return R(204,null)}
+      if(p.endsWith('/dispatches'))return R(204,null);
+      return R(404,{});
+    }
+    const cuerpo=o.body?JSON.parse(o.body):null;
+    if(p==='/api/estado')return R(200,{version:'1.4.0',config:{modo:'real',ia:'veto',quote:'USDC',objetivo:{BTC:50,POL:10}},ciclo:51,actualizado:ahora-4*3600e3,historial:[],ultimo:{ok:true,exchange:'hyperliquid',quote:'USDC',activos:[],notas:['POL: sin datos de mercado'],errores:[]}});
+    if(p==='/api/semaforo')return R(200,{version:'1.4.0',ciclo:51,actualizado:ahora-4*3600e3,ok:true,errores:[],exchange:'hyperliquid',modo:'real',pausado:false,real:{error:'HTTP 401: invalid API key'},libre:10.5,monto_min:11,quote:'USDC',ia:{modo:'veto',proveedor:'kilo.ai',modelos:['a','b'],ultimas:[]}});
+    if(p==='/api/ia/probar')return R(200,{ok:false,codigo:'caida',error:'kilo.ai HTTP 503 con b',pruebas:cuerpo&&cuerpo.todos?[{modelo:'a',ok:false,error:'HTTP 503'},{modelo:'b',ok:false,error:'HTTP 503'}]:[]});
+    if(p==='/api/ia/diagnosticar')return R(500,{error:'no debería llamarse'});
+    return R(200,{});
+  };
+  const {w,d,errores}=crear(fetchMock,null,{onb:true,tuto:true,url:'https://kumo-bot.amigo.workers.dev',token:'t0k',gh:{owner:'amigo',repo:'kumo-nube',rama:'main',token:'ghp_prueba'}});
+  await espera(80);click(d,'.nav [data-target="config"]');for(let i=0;i<30&&!d.querySelector('#semLuces [data-sem="ia"][data-nivel="rojo"]');i++)await espera(30);
+  const fila=k=>d.querySelector('#semLuces [data-sem="'+k+'"]'),A=()=>d.getElementById('semAyuda').textContent;
+  ok(fila('nube').dataset.nivel==='amarillo'&&/v1\.4\.0/.test(fila('nube').textContent)&&/Actualizar el código/.test(A()),'nube vieja en amarillo con botón para actualizar');
+  ok(fila('ciclos').dataset.nivel==='rojo'&&/60 días/.test(A()),'ciclos apagados por GitHub en rojo con explicación');
+  ok(fila('exchange').dataset.nivel==='rojo'&&/lista de IPs/.test(A()),'exchange sin claves en rojo con instrucciones');
+  ok(fila('ia').dataset.nivel==='rojo'&&/HAY FALLAS/.test(d.getElementById('semPill').textContent),'IA caída en rojo');
+  llamadas.length=0;click(d,'#semArreglar');for(let i=0;i<60&&!/Vuelvo a revisar/.test(d.getElementById('semDiag').textContent);i++)await espera(30);
+  const dg=d.getElementById('semDiag').textContent;
+  ok(llamadas.includes('PUT /repos/amigo/kumo-nube/actions/workflows/ciclo.yml/enable')&&llamadas.includes('POST /repos/amigo/kumo-nube/actions/workflows/ciclo.yml/dispatches'),'autocorrección: reactiva los ciclos y lanza uno');
+  ok(/Ciclos automáticos reactivados/.test(dg)&&/Ciclo lanzado/.test(dg),'el registro dice qué arregló');
+  ok(/La IA no está disponible/.test(dg)&&!llamadas.includes('POST /api/ia/diagnosticar'),'sin IA: solo arreglos seguros, no le pregunta');
+  ok(!llamadas.some(x=>/POST \/api\/config/.test(x)),'nunca cambia tu configuración sin preguntar');
   ok(errores.length===0,'sin errores JS: '+errores.join(' | '));
  }
  console.log(fallos?`\n${fallos} FALLOS`:'\nTODO OK');process.exit(fallos?1:0);

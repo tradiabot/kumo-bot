@@ -326,6 +326,40 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 .muestra.pro i,.muestra.pro-claro i{border-radius:4px}
 .muestra.pro i:nth-child(1){top:12px;background:linear-gradient(90deg,#ff4f97,#9b5cff)}.muestra.pro i:nth-child(2){top:26px;background:#38d4f0;right:24px}.muestra.pro i:nth-child(3){top:40px;background:#262b3b}
 .muestra.pro-claro i:nth-child(1){top:12px;background:linear-gradient(90deg,#e0337c,#9b5cff)}.muestra.pro-claro i:nth-child(2){top:26px;background:#0a8fb0;right:24px}.muestra.pro-claro i:nth-child(3){top:40px;background:#e2e5ee}
+/* Gráficas por activo */
+.tap{cursor:pointer}.tap:active{opacity:.75}
+.tap .ver-g{font-size:10px;color:var(--acento2);font-weight:800;letter-spacing:.04em}
+.gf svg{width:100%;display:block;height:auto;overflow:visible;touch-action:pan-y}
+.gf .rej{stroke:var(--line);stroke-width:1;opacity:.6}
+.gf .serie{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.gf .lbl{fill:var(--muted);font-size:10px}
+.gf .lbl.b{font-weight:800}
+.gf .cruz{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3;pointer-events:none}
+.gf .costo{stroke:var(--warn);stroke-width:1.5;stroke-dasharray:6 4}
+.gf .lim{stroke:var(--acento);stroke-width:1.2;stroke-dasharray:2 4}
+.gfHead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:14px 0 3px;flex-wrap:wrap}
+.gfHead b{font-size:12px}.gfHead span{font-size:11px;color:var(--muted)}
+.gfLeg{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-top:4px}
+.gfLeg i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:4px;vertical-align:middle}
+#grafTip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:11px;z-index:70;display:none;line-height:1.5;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.gfPos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.gfPos .metric{padding:7px}.gfPos .metric b{font-size:13px}
+/* Semáforo */
+.sem-fila{display:flex;align-items:center;gap:10px;border-top:1px dashed var(--line);padding:9px 0}
+.sem-fila:first-child{border-top:0}
+.sem-caja{display:flex;gap:3px;background:#05060a;border-radius:9px;padding:4px 5px;flex:none}
+.sem-caja i{width:11px;height:11px;border-radius:50%;background:#2a2d36;opacity:.55}
+.sem-caja i.on.r{background:#ff3b4e;opacity:1;box-shadow:0 0 8px #ff3b4e}
+.sem-caja i.on.a{background:#ffc531;opacity:1;box-shadow:0 0 8px #ffc531}
+.sem-caja i.on.v{background:#2fe08a;opacity:1;box-shadow:0 0 8px #2fe08a}
+.sem-fila .info{flex:1;min-width:0}.sem-fila .info b{font-size:13px}.sem-fila .info small{display:block;color:var(--muted);overflow-wrap:anywhere}
+.sem-fila .ms{font:700 11px ui-monospace,Menlo,monospace;color:var(--muted);white-space:nowrap}
+.sem-ayuda{border-left:4px solid var(--warn);background:var(--panel2);padding:9px 11px;border-radius:3px;font-size:12px;line-height:1.5;margin-top:8px}
+.sem-ayuda.r{border-left-color:var(--down)}
+.sem-ayuda ol{margin:4px 0 0;padding-left:18px}
+.sem-ayuda button{margin-top:7px}
+.diag-log{font:12px/1.55 ui-monospace,Menlo,monospace;background:var(--panel2);border-radius:4px;padding:8px 10px;margin-top:9px;max-height:260px;overflow:auto}
+.diag-log div.ok{color:var(--up)}.diag-log div.mal{color:var(--down)}.diag-log div.av{color:var(--warn)}
 </style>
 </head>
 <body>
@@ -625,6 +659,14 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 
 <section id="config" class="screen" aria-label="Config">
   <div class="section-head"><div><span class="eyebrow"><span class="kata">設定</span>AJUSTES</span><h2>Config</h2></div></div>
+  <div class="panel" id="semaforo">
+    <div class="panel-title"><span>🚦 Estado en tiempo real</span><span id="semPill" class="pill live"><i></i>—</span></div>
+    <div id="semLuces"></div>
+    <div id="semAyuda"></div>
+    <div class="grid two" style="margin-top:9px"><button id="semRevisar" class="small">↻ REVISAR AHORA</button><button id="semArreglar" class="primary">🔍 BUSCAR Y CORREGIR</button></div>
+    <small id="semTs" class="muted" style="display:block;margin-top:6px">—</small>
+    <div id="semDiag" class="oculto"></div>
+  </div>
   <div class="panel">
     <div class="panel-title"><span>Interfaz</span></div>
     <div class="chips" id="temaChips"><button data-tema="pro">PRO GRAFITO</button><button data-tema="pro-claro">PRO PORCELANA</button><button data-tema="noche">NEÓN NOCHE</button><button data-tema="dia">NEÓN DÍA</button><button data-tema="clasica">CLÁSICA</button></div>
@@ -693,6 +735,19 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 </nav>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="grafModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="grafTitulo">
+  <div class="modal gf">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div><h2 id="grafTitulo" style="margin:0">—</h2><small id="grafSub" class="muted">—</small></div>
+      <button class="small ghost" id="grafCerrar">CERRAR</button>
+    </div>
+    <div class="chips" id="grafTf" style="margin-top:10px"><button data-tf="1h">1H</button><button data-tf="4h" class="active">4H</button><button data-tf="1d">1D</button></div>
+    <div id="grafPos"></div>
+    <div id="grafCuerpo"><p class="empty">Cargando velas…</p></div>
+    <div class="grid two" style="margin-top:12px"><button id="grafOrden" class="primary">＋ CREAR ORDEN</button><button id="grafIA" class="secundario">✨ PEDIR A LA IA</button></div>
+  </div>
+</div>
+<div id="grafTip"></div>
 <div id="modal" class="modal-backdrop" role="dialog" aria-modal="true">
   <div class="modal"><h2 id="mTitulo">Confirmar</h2><p id="mTexto"></p><div id="mExtra"></div>
     <div class="confirm-actions"><button id="mNo">CANCELAR</button><button id="mSi" class="primary">CONFIRMAR</button></div></div>
@@ -702,7 +757,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.4.0';
+var APP_VERSION='1.5.0';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -1201,7 +1256,8 @@ function pintarEstado(){
   var costos=e.costos||{};
   $('activos').innerHTML=(u.activos||[]).map(function(a){
     var obj=a.objetivo||0;
-    return '<div class="row"><span class="info"><b>'+esc(a.simbolo)+'</b> <small>'+num(a.cantidad,6)+' · '+precio(a.precio)+(a.costo?' · costo '+precio(a.costo):'')+(costos[a.simbolo]&&costos[a.simbolo].estimado?' (estimado)':'')+'</small><div class="bar"><i style="width:'+Math.min(100,a.peso)+'%"></i>'+(obj?'<em style="left:'+Math.min(99,obj)+'%"></em>':'')+'</div></span><span style="text-align:right"><b>'+num(a.valor,2)+'</b><small class="'+clsPct(a.pnl)+'">'+(a.pnl!=null?pct(a.pnl):num(a.peso,1)+'%')+'</small></span></div>';
+    var tap=a.simbolo!==u.quote&&!/^(USD|USDT|USDC|DAI|EUR)$/.test(a.simbolo);
+    return '<div class="row'+(tap?' tap" data-graf="'+esc(a.simbolo)+'"':'"')+'><span class="info"><b>'+esc(a.simbolo)+'</b>'+(tap?' <span class="ver-g">📈 VER GRÁFICA</span>':'')+' <small>'+num(a.cantidad,6)+' · '+precio(a.precio)+(a.costo?' · costo '+precio(a.costo):'')+(costos[a.simbolo]&&costos[a.simbolo].estimado?' (estimado)':'')+'</small><div class="bar"><i style="width:'+Math.min(100,a.peso)+'%"></i>'+(obj?'<em style="left:'+Math.min(99,obj)+'%"></em>':'')+'</div></span><span style="text-align:right"><b>'+num(a.valor,2)+'</b><small class="'+clsPct(a.pnl)+'">'+(a.pnl!=null?pct(a.pnl):num(a.peso,1)+'%')+'</small></span></div>';
   }).join('')||'<p class="empty">Sin activos todavía.</p>';
 }
 // ---------------------------------------------------------------- Señales de la IA
@@ -1219,7 +1275,7 @@ function senalesDe(){
 }
 function filaSenal(x){
   var cl=claseAcc(x.accion);
-  return '<div class="row"><span class="info"><b>'+esc(x.simbolo)+'</b> <span class="badge '+cl+'">'+esc(x.accion)+' '+(x.confianza|0)+'%</span>'+(x.precio?' <small style="display:inline">@ '+precio(x.precio)+'</small>':'')+
+  return '<div class="row tap" data-graf="'+esc(x.simbolo)+'"><span class="info"><b>'+esc(x.simbolo)+'</b> <span class="badge '+cl+'">'+esc(x.accion)+' '+(x.confianza|0)+'%</span>'+(x.precio?' <small style="display:inline">@ '+precio(x.precio)+'</small>':'')+
     '<small>'+esc(x.razon||'')+'</small><div class="conf '+(cl==='buy'?'up':cl==='sell'?'down':'warn-text')+'"><i style="width:'+Math.max(0,Math.min(100,x.confianza|0))+'%"></i></div></span></div>';
 }
 var RES={ejecutada:['EJECUTADA ✓','buy'],frenada:['FRENADA POR LA IA','off'],pausa:['EN PAUSA','off'],error:['ERROR','sell'],pendiente:['SIN EJECUTAR','wait']};
@@ -1527,6 +1583,7 @@ function pintarConfig(){
   $('repoInfo').innerHTML=S.gh&&S.gh.owner?'Repositorio: <a href="#" data-url="https://github.com/'+esc(S.gh.owner)+'/'+esc(S.gh.repo)+'">'+esc(S.gh.owner)+'/'+esc(S.gh.repo)+'</a>'+(S.gh.token?'':' · <span class="warn-text">sin token en este teléfono</span>'):'Este teléfono no tiene datos del repositorio (conectado solo con token).';
   $('appVer').textContent='v'+APP_VERSION;$('nubeVer').textContent=(datos.estado&&datos.estado.version)?'v'+datos.estado.version:'—';$('nubeVer2').textContent=$('nubeVer').textContent;
   pintarAvisos();
+  semAlAbrir();
 }
 $('verBienvenida').onclick=function(){abrirOnb('hola')};
 $('verToken').onclick=function(){var i=$('cfgToken');i.type=i.type==='password'?'text':'password'};
@@ -1637,10 +1694,272 @@ window.onAvisosNativos=function(est){
 function avisosListos(){pintarAvisos();api('/api/avisos/probar',{}).then(function(){NATIVO.revisarAhora();toast('¡Listo! Te llegará un aviso de prueba')}).catch(function(e){toast(traduce(e),true)})}
 $('avisosProbar').onclick=function(){NATIVO&&NATIVO.probar('Kumo Bot ☁️','Así se verán tus avisos.')};
 
+// ---------------------------------------------------------------- Gráficas por activo
+// Toca un activo (Cartera o señales de la IA) y se abre su gráfica: precio con tu
+// costo promedio y tus órdenes, RSI con tus umbrales y MACD. Las velas son de TU
+// exchange: las guarda tu nube en cada ciclo (1H, 4H y 1D).
+var grafTF='4h',grafSym=null,grafDatos=null;
+function emaSerie(v,n){var k=2/(n+1),o=[],e=null;for(var i=0;i<v.length;i++){if(i<n-1){o.push(null);continue}if(e===null){var s=0;for(var j=i-n+1;j<=i;j++)s+=v[j];e=s/n}else e=v[i]*k+e*(1-k);o.push(e)}return o}
+function rsiSerie(c,n){n=n||14;var o=[null],g=0,p=0;for(var i=1;i<c.length;i++){var d=c[i]-c[i-1],su=Math.max(d,0),ba=Math.max(-d,0);
+  if(i<=n){g+=su;p+=ba;if(i<n){o.push(null);continue}g/=n;p/=n}else{g=(g*(n-1)+su)/n;p=(p*(n-1)+ba)/n}
+  o.push(p===0?100:100-100/(1+g/p))}return o}
+function macdSerie(c){
+  var a=emaSerie(c,12),b=emaSerie(c,26),m=c.map(function(_,i){return a[i]!=null&&b[i]!=null?a[i]-b[i]:null});
+  var ini=m.findIndex(function(x){return x!=null}),sig=m.map(function(){return null});
+  if(ini>=0){var e=emaSerie(m.slice(ini),9);for(var i=0;i<e.length;i++)sig[ini+i]=e[i]}
+  return {macd:m,senal:sig,hist:m.map(function(x,i){return x!=null&&sig[i]!=null?x-sig[i]:null})};
+}
+function escala(vals,extra,H,pad){var vs=vals.filter(function(v){return v!=null});(extra||[]).forEach(function(v){if(v!=null)vs.push(v)});if(vs.length<2)return null;
+  var mn=Math.min.apply(null,vs),mx=Math.max.apply(null,vs),rg=(mx-mn)||Math.abs(mx)*0.01||1;return {mn:mn,mx:mx,y:function(v){return H-pad-(v-mn)/rg*(H-pad*2)}}}
+function trazo(vals,W,y){var n=vals.length-1,d='',p=true;for(var i=0;i<vals.length;i++){var v=vals[i];if(v==null)continue;d+=(p?'M':' L')+(i/n*W).toFixed(1)+' '+y(v).toFixed(1);p=false}return d}
+function rejilla(W,H,k){var g='';for(var i=1;i<k;i++){var y=(H/k*i).toFixed(1);g+='<line class="rej" x1="0" y1="'+y+'" x2="'+W+'" y2="'+y+'"/>'}return g}
+function svgPrecio(c,W,costo,lims){
+  var H=170,pad=12,ok=function(v){return v>0&&v>Math.min.apply(null,c)*0.75&&v<Math.max.apply(null,c)*1.25};
+  var extra=[];if(ok(costo))extra.push(costo);lims=lims.filter(function(l){return ok(l.p)});lims.forEach(function(l){extra.push(l.p)});
+  var e=escala(c,extra,H,pad);if(!e)return '';var n=c.length-1,d=trazo(c,W,e.y),sube=c[n]>=c[0],col=sube?'var(--up)':'var(--down)';
+  var h='<svg viewBox="0 0 '+W+' '+H+'" data-h="'+H+'">'+rejilla(W,H,4)+'<path d="'+d+' L'+W+' '+H+' L0 '+H+' Z" fill="'+col+'" opacity=".10"/><path class="serie" d="'+d+'" style="stroke:'+col+'"/>';
+  if(ok(costo))h+='<line class="costo" x1="0" x2="'+W+'" y1="'+e.y(costo).toFixed(1)+'" y2="'+e.y(costo).toFixed(1)+'"/><text class="lbl b" x="'+(W-4)+'" text-anchor="end" y="'+(e.y(costo)-4).toFixed(1)+'" style="fill:var(--warn)">tu costo '+esc(precio(costo))+'</text>';
+  lims.forEach(function(l){var y=e.y(l.p).toFixed(1);h+='<line class="lim" x1="0" x2="'+W+'" y1="'+y+'" y2="'+y+'"/><text class="lbl" x="4" y="'+(y-4)+'" style="fill:var(--acento)">'+esc(l.t)+' '+esc(precio(l.p))+'</text>'});
+  h+='<circle cx="'+W+'" cy="'+e.y(c[n]).toFixed(1)+'" r="4" fill="'+col+'"/><text class="lbl" x="2" y="11">'+esc(precio(e.mx))+'</text><text class="lbl" x="2" y="'+(H-2)+'">'+esc(precio(e.mn))+'</text></svg>';
+  return h;
+}
+function svgRSI(r,W,bajo,alto){var H=90,pad=6,y=function(v){return H-pad-v/100*(H-pad*2)};
+  return '<svg viewBox="0 0 '+W+' '+H+'" data-h="'+H+'"><rect x="0" y="'+y(alto).toFixed(1)+'" width="'+W+'" height="'+(y(bajo)-y(alto)).toFixed(1)+'" fill="var(--line)" opacity=".35"/>'+
+    '<line class="rej" x1="0" x2="'+W+'" y1="'+y(alto).toFixed(1)+'" y2="'+y(alto).toFixed(1)+'"/><line class="rej" x1="0" x2="'+W+'" y1="'+y(bajo).toFixed(1)+'" y2="'+y(bajo).toFixed(1)+'"/>'+
+    '<path class="serie" d="'+trazo(r,W,y)+'" style="stroke:var(--acento2)"/><text class="lbl" x="2" y="'+(y(alto)-3).toFixed(1)+'">'+alto+' vende</text><text class="lbl" x="2" y="'+(y(bajo)+11).toFixed(1)+'">'+bajo+' compra</text></svg>'}
+function svgMACD(M,W){var H=90,pad=6,e=escala(M.macd.concat(M.senal,M.hist),[0],H,pad);if(!e)return '<p class="empty">Pocas velas para el MACD</p>';
+  var n=M.hist.length-1,bw=Math.max(1.5,W/(n+1)-1.5),y0=e.y(0),b='';
+  M.hist.forEach(function(v,i){if(v==null)return;var yy=e.y(v);b+='<rect x="'+(i/n*W-bw/2).toFixed(1)+'" y="'+Math.min(yy,y0).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,Math.abs(yy-y0)).toFixed(1)+'" fill="'+(v>=0?'var(--up)':'var(--down)')+'" opacity=".45"/>'});
+  return '<svg viewBox="0 0 '+W+' '+H+'" data-h="'+H+'">'+b+'<line class="rej" x1="0" x2="'+W+'" y1="'+y0.toFixed(1)+'" y2="'+y0.toFixed(1)+'"/><path class="serie" d="'+trazo(M.macd,W,e.y)+'" style="stroke:var(--acento2)"/><path class="serie" d="'+trazo(M.senal,W,e.y)+'" style="stroke:var(--acento)"/></svg>'}
+function lecturaGraf(c,r,M,cfg){
+  var t=[],n=c.length-1,rv=r[n],h=M.hist[n],hp=M.hist[n-1];
+  if(rv!=null)t.push(rv<=cfg.rsi_compra?'RSI '+rv.toFixed(0)+': zona de compra según tu estrategia (≤ '+cfg.rsi_compra+')':rv>=cfg.rsi_venta?'RSI '+rv.toFixed(0)+': zona de venta según tu estrategia (≥ '+cfg.rsi_venta+')':'RSI '+rv.toFixed(0)+': zona neutra');
+  if(h!=null&&hp!=null)t.push(hp<=0&&h>0?'MACD: cruce alcista reciente':hp>=0&&h<0?'MACD: cruce bajista reciente':h>0?'MACD: impulso alcista':'MACD: impulso bajista');
+  return t.join(' · ')||'Sin lectura técnica';
+}
+function fechaVela(ms,tf){var d=new Date(ms);return tf==='1d'?d.toLocaleDateString('es',{day:'2-digit',month:'short'}):d.toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
+function abrirGrafica(sym){
+  grafSym=String(sym||'').toUpperCase();if(!grafSym)return;grafDatos=null;
+  $('grafTitulo').textContent=grafSym;$('grafSub').textContent='Cargando…';$('grafPos').innerHTML='';$('grafCuerpo').innerHTML='<p class="empty">Cargando velas…</p>';
+  $('grafModal').classList.add('open');
+  return api('/api/graficas?simbolo='+encodeURIComponent(grafSym)).then(function(d){grafDatos=d;pintarGrafica()}).catch(function(e){
+    $('grafSub').textContent='Sin gráfica';pintarPosicion();
+    $('grafCuerpo').innerHTML='<p class="notice warn">'+esc(e.status===404&&e.data&&e.data.pendiente?e.data.error:e.status===404?'Tu nube aún no guarda gráficas: actualiza tu nube (Config → Actualizar nube).':traduce(e))+'</p>';
+  });
+}
+function cerrarGrafica(){$('grafModal').classList.remove('open');$('grafTip').style.display='none'}
+function pintarPosicion(){
+  var u=((datos.estado||{}).ultimo)||{},a=(u.activos||[]).filter(function(x){return x.simbolo===grafSym})[0],op=((u.ia||{}).opiniones||{})[grafSym];
+  var h='';
+  if(a)h+='<div class="gfPos"><div class="metric"><span>Tienes</span><b>'+num(a.cantidad,6)+'</b></div><div class="metric"><span>Valor</span><b>'+num(a.valor,2)+' '+esc(u.quote||'')+'</b></div><div class="metric"><span>Ganancia</span><b class="'+clsPct(a.pnl)+'">'+(a.pnl!=null?pct(a.pnl):'—')+'</b></div>'+
+    '<div class="metric"><span>Precio</span><b>'+precio(a.precio)+'</b></div><div class="metric"><span>Tu costo</span><b>'+(a.costo?precio(a.costo):'—')+'</b></div><div class="metric"><span>Peso / meta</span><b>'+num(a.peso,1)+'% / '+num(a.objetivo||0,0)+'%</b></div></div>';
+  if(op)h+='<p class="notice">◎ IA: <b>'+esc(op.accion)+' '+(op.confianza|0)+'%</b> · '+esc(op.razon||'')+'</p>';
+  $('grafPos').innerHTML=h;
+}
+function pintarGrafica(){
+  pintarPosicion();
+  document.querySelectorAll('#grafTf [data-tf]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-tf')===grafTF)});
+  var d=grafDatos,m=d&&d.marcos&&d.marcos[grafTF];
+  if(!m||!m.c||m.c.length<2){$('grafSub').textContent=(d&&d.exchange||'')+' · sin velas '+grafTF.toUpperCase();$('grafCuerpo').innerHTML='<p class="empty">Tu exchange no dio velas de '+grafTF.toUpperCase()+' para '+esc(grafSym)+'. Prueba otro marco.</p>';return}
+  var c=m.c.map(Number),t=m.t||[],n=c.length-1,W=600,cfg=(datos.estado&&datos.estado.config)||datos.config||{};
+  var bajo=Number(cfg.rsi_compra)||35,alto=Number(cfg.rsi_venta)||68;cfg={rsi_compra:bajo,rsi_venta:alto};
+  var r=rsiSerie(c,14),M=macdSerie(c),cambio=(c[n]/c[0]-1)*100;
+  var u=((datos.estado||{}).ultimo)||{},a=(u.activos||[]).filter(function(x){return x.simbolo===grafSym})[0],costo=a&&a.costo;
+  var lims=(datos.ordenes||[]).filter(function(o){return o.simbolo===grafSym&&o.limite&&(o.estado==='propuesta'||o.estado==='aprobada')}).map(function(o){return {p:Number(o.limite),t:o.accion==='COMPRAR'?'compra ≤':'venta ≥'}});
+  $('grafSub').textContent=(n+1)+' velas '+grafTF.toUpperCase()+' · '+String(d.exchange||'').replace('_',' ')+' · '+hace(d.ts);
+  var h='<div class="gfHead"><b>Precio '+esc(precio(c[n]))+' '+esc(d.quote||'')+'</b><span class="'+clsPct(cambio)+'">'+pct(cambio)+' en '+(n+1)+' velas</span></div>'+svgPrecio(c,W,costo,lims)+
+    '<div class="gfLeg"><span>'+esc(t[0]?fechaVela(t[0],grafTF):'')+'</span><span style="margin-left:auto">'+esc(t[n]?fechaVela(t[n],grafTF):'')+'</span></div>'+
+    (costo?'<div class="gfLeg"><span><i style="background:var(--warn)"></i>Tu costo promedio</span>'+(lims.length?'<span><i style="background:var(--acento)"></i>Tus órdenes con límite</span>':'')+'</div>':'')+
+    '<div class="gfHead"><b>RSI 14</b><span>'+(r[n]!=null?r[n].toFixed(1):'—')+'</span></div>'+svgRSI(r,W,bajo,alto)+
+    '<div class="gfHead"><b>MACD 12/26/9</b><span>'+(M.hist[n]!=null?'hist '+M.hist[n].toPrecision(3):'—')+'</span></div>'+svgMACD(M,W)+
+    '<div class="gfLeg"><span><i style="background:var(--acento2)"></i>MACD</span><span><i style="background:var(--acento)"></i>Señal</span><span><i style="background:var(--up)"></i>Histograma +</span><span><i style="background:var(--down)"></i>−</span></div>'+
+    '<p class="notice">'+esc(lecturaGraf(c,r,M,cfg))+'</p><small class="muted">Las velas se actualizan en cada ciclo de tu nube. No es asesoría financiera.</small>';
+  $('grafCuerpo').innerHTML=h;
+  cruzGrafica(c,t,r,M,W);
+}
+function cruzGrafica(c,t,r,M,W){
+  var svgs=$('grafCuerpo').querySelectorAll('svg'),tip=$('grafTip'),n=c.length;if(!svgs.length)return;
+  function mueve(ev){var b=svgs[0].getBoundingClientRect();if(!b.width)return;var rel=Math.min(1,Math.max(0,(ev.clientX-b.left)/b.width)),i=Math.round(rel*(n-1));
+    svgs.forEach(function(sv){var v=sv.querySelector('.cruz');if(v)v.remove();var ln=document.createElementNS('http://www.w3.org/2000/svg','line');ln.setAttribute('class','cruz');ln.setAttribute('x1',(rel*W).toFixed(1));ln.setAttribute('x2',(rel*W).toFixed(1));ln.setAttribute('y1','0');ln.setAttribute('y2',sv.getAttribute('data-h')||'100');sv.appendChild(ln)});
+    tip.innerHTML='<b>'+esc(t[i]?fechaVela(t[i],grafTF):'vela '+(i+1))+'</b><br>Cierre '+esc(precio(c[i]))+'<br>RSI '+(r[i]!=null?r[i].toFixed(1):'—')+'<br>MACD '+(M.hist[i]!=null?M.hist[i].toPrecision(3):'—');
+    tip.style.display='block';tip.style.left=Math.min(window.innerWidth-150,ev.clientX+12)+'px';tip.style.top=Math.max(8,ev.clientY-90)+'px'}
+  function sale(){tip.style.display='none';$('grafCuerpo').querySelectorAll('.cruz').forEach(function(x){x.remove()})}
+  svgs.forEach(function(sv){sv.addEventListener('mousemove',mueve);sv.addEventListener('mouseleave',sale);sv.addEventListener('touchstart',function(e){if(e.touches[0])mueve(e.touches[0])},{passive:true});sv.addEventListener('touchmove',function(e){if(e.touches[0])mueve(e.touches[0])},{passive:true});sv.addEventListener('touchend',sale)});
+}
+document.addEventListener('click',function(e){var f=e.target.closest('[data-graf]');if(f&&!e.target.closest('button'))abrirGrafica(f.getAttribute('data-graf'))});
+document.querySelectorAll('#grafTf [data-tf]').forEach(function(b){b.onclick=function(){grafTF=b.getAttribute('data-tf');if(grafDatos)pintarGrafica()}});
+$('grafCerrar').onclick=cerrarGrafica;
+$('grafModal').addEventListener('click',function(e){if(e.target===$('grafModal'))cerrarGrafica()});
+$('grafOrden').onclick=function(){var s=grafSym;cerrarGrafica();irA('ordenes');$('ordNuevaBox').open=true;$('onSym').value=s;$('onCant').focus()};
+$('grafIA').onclick=function(){var s=grafSym;cerrarGrafica();irA('ordenes');$('ordIAtxt').value='Analiza '+s+' y propón una orden prudente';$('ordIAtxt').focus()};
+
+// ---------------------------------------------------------------- Semáforo (Config)
+// Nube, ciclos, IA y exchange en tiempo real. Se revisa cada 20 s mientras
+// Config está abierta; la IA se prueba al abrir y cada 5 min (cada prueba es
+// una llamada al proveedor). «Buscar y corregir» diagnostica, aplica sola los
+// arreglos seguros y, si la IA funciona, le pide explicar y elegir los demás.
+var SEM_NOMBRES={nube:'☁ Nube (Cloudflare)',ciclos:'⟳ Ciclos (GitHub Actions)',ia:'◎ IA',exchange:'⇄ Exchange'};
+var sem={nube:null,ciclos:null,ia:null,exchange:null},semIA=null,semGH=null,semInfo=null,semCorriendo=false,semUlt=0;
+function luz(nivel,detalle,codigo,extra){return Object.assign({nivel:nivel,detalle:detalle,codigo:codigo||null},extra||{})}
+function peor(){var o={rojo:3,amarillo:2,verde:1,gris:0},w='verde';Object.keys(sem).forEach(function(k){if(sem[k]&&o[sem[k].nivel]>o[w])w=sem[k].nivel});return w}
+var AYUDA={
+  token:{t:'Tu nube rechaza el token de este teléfono.',p:['Toca «Cambiar claves» y valida GitHub: la app recupera la conexión.','Si conectaste con token, pégalo de nuevo (Config → Mi nube).'],a:['claves']},
+  caida:{t:'Tu nube no responde.',p:['Revisa que tengas internet.','Si sigue igual, reinstálala: se vuelve a desplegar en Cloudflare con tus mismas claves (2-4 min).'],a:['reinstalar']},
+  lenta:{t:'Tu nube responde lento. Suele pasar solo en uno o dos minutos.',p:[]},
+  vieja:{t:'Tu nube tiene código más viejo que la app.',p:['Toca «Actualizar nube»: copia el código nuevo y vuelve a desplegar. Tus claves y ajustes se conservan.'],a:['actualizar']},
+  sin_gh:{t:'Este teléfono no tiene tu token de GitHub, así que no puede revisar ni relanzar los ciclos.',p:['Toca «Cambiar claves» y valida GitHub.'],a:['claves']},
+  wf_off:{t:'GitHub apagó tus ciclos automáticos (lo hace tras 60 días sin actividad en el repositorio).',p:['Se reactivan con un toque.'],a:['activar_wf','ciclo']},
+  run_fallo:{t:'El último ciclo falló en GitHub Actions.',p:['Mira el paso que falló en el registro.','Si fue un fallo pasajero (red, GitHub), relanzar el ciclo lo arregla.'],a:['ciclo','ver_log']},
+  atrasado:{t:'Hace mucho que no corre un ciclo. GitHub a veces retrasa o salta los ciclos programados.',p:['Lanza uno ahora; los siguientes siguen solos cada 30 min.'],a:['ciclo']},
+  sin_ciclos:{t:'Tu nube todavía no ha corrido ningún ciclo.',p:['Lanza el primero ahora (tarda 1-2 min).'],a:['ciclo']},
+  ciclo_error:{t:'El último ciclo terminó con error.',p:['Lee el error de abajo. Si es de claves, cámbialas; si fue algo pasajero, relanza el ciclo.'],a:['ciclo']},
+  pausado:{t:'El bot está en pausa: analiza pero no opera.',p:['Reanúdalo cuando quieras desde el Panel.'],a:['reanudar']},
+  sin_ia:{t:'Tu nube no tiene IA configurada.',p:['Cambiar claves → paso IA → elige Kilo (gratis, sin cuenta) o pega la clave de tu proveedor.'],a:['claves']},
+  clave_ia:{t:'Tu proveedor de IA rechazó la clave.',p:['Cambiar claves → paso IA: pega una clave nueva o cambia a Kilo (gratis, sin clave).'],a:['claves']},
+  ia_caida:{t:'Ningún modelo de IA respondió. Los gratuitos se saturan a ratos.',p:['Prueba todos los modelos y deja como principal el que responda.','Si ninguno responde en una hora, cambia de proveedor en Cambiar claves → IA.'],a:['ia_todos']},
+  ia_lenta:{t:'La IA responde, pero lento o con fallos en el último ciclo.',p:['Prueba todos los modelos y deja como principal el más rápido que responda.'],a:['ia_todos']},
+  ex_claves:{t:'Tu exchange no aceptó las claves.',p:['Revisa en el exchange que la clave API siga activa, con permiso de lectura y trading (sin retiros).','Si tu exchange pide lista de IPs, quítala: GitHub Actions cambia de IP en cada ciclo.','Cambiar claves → paso Exchange para pegar claves nuevas.'],a:['claves']},
+  ex_error:{t:'El exchange dio un error en el último ciclo.',p:['Si es pasajero (mantenimiento, red), relanzar el ciclo lo arregla.'],a:['ciclo']},
+  sin_mercado:{t:'Hay monedas en tu reparto que tu exchange no tiene.',p:['Quítalas del reparto (Estrategia) o cámbialas por otras.'],a:['quitar_sin_mercado']},
+  saldo:{t:'Tu saldo libre está por debajo del mínimo por orden: el bot no puede comprar.',p:['Deposita en tu exchange (en Hyperliquid, USDC por Arbitrum; recomendado ~30 USDC).'],a:[]}
+};
+var ARREGLOS={
+  reinstalar:{t:'Reinstalar la nube en Cloudflare',seguro:true,gh:true,f:function(){return lanzarWorkflow(S.gh.owner,S.gh.repo,'instalar.yml',S.gh.rama||'main').then(function(){return 'Reinstalación lanzada (2-4 min)'})}},
+  activar_wf:{t:'Reactivar los ciclos automáticos en GitHub',seguro:true,gh:true,f:function(){return gh('PUT','/repos/'+S.gh.owner+'/'+S.gh.repo+'/actions/workflows/ciclo.yml/enable').then(function(r){if(r.status!==204)throw new Error('GitHub HTTP '+r.status);return 'Ciclos automáticos reactivados'})}},
+  ciclo:{t:'Lanzar un ciclo ahora',seguro:true,gh:true,f:function(){return lanzarWorkflow(S.gh.owner,S.gh.repo,'ciclo.yml',S.gh.rama||'main').then(function(){return 'Ciclo lanzado: termina en 1-2 min'})}},
+  ia_todos:{t:'Probar todos los modelos de IA y dejar el que responda',seguro:true,f:function(){return api('/api/ia/probar',{todos:true}).then(function(r){r.ts=Date.now();semIA=r;return r.ok?(r.preferido_nuevo?r.preferido_nuevo+' queda como modelo principal':'La IA responde con '+r.modelo):'Ningún modelo respondió: '+(r.error||'')})}},
+  actualizar:{t:'Actualizar el código de tu nube',f:function(){$('actualizarNube').click();return Promise.resolve('Sigue los pasos de «Actualizar nube»')}},
+  claves:{t:'Abrir «Cambiar claves»',f:function(){$('cambiarClaves').click();return Promise.resolve('Asistente de claves abierto')}},
+  reanudar:{t:'Reanudar el bot',f:function(){irA('panel');$('pausaBtn').click();return Promise.resolve('Confirma en el Panel')}},
+  ver_log:{t:'Ver el registro del ciclo en GitHub',f:function(){if(semGH&&semGH.url)abrirUrl(semGH.url);return Promise.resolve('Registro abierto')}},
+  quitar_sin_mercado:{t:'Quitar del reparto las monedas que tu exchange no tiene',f:function(){
+    var malas=sinMercado(),obj=Object.assign({},((datos.config||{}).objetivo)||{});malas.forEach(function(m){delete obj[m]});
+    return confirmar('Quitar monedas','Se quitan del reparto: '+malas.join(', ')+'. Lo que tengas de ellas no se vende.','QUITAR').then(function(ok){if(!ok)return 'No se cambió el reparto';
+      return api('/api/config',{objetivo:obj}).then(function(d){datos.config=d.config;if(datos.estado)datos.estado.config=d.config;return 'Reparto actualizado sin '+malas.join(', ')})})}}
+};
+function sinMercado(){var u=((datos.estado||{}).ultimo)||{},m=[];(u.notas||[]).concat(semInfo&&semInfo.errores||[]).forEach(function(x){var r=/^([A-Z0-9]+): sin datos de mercado/.exec(x);if(r&&m.indexOf(r[1])<0)m.push(r[1])});return m}
+function evaluarSem(info,ms,err){
+  semInfo=info||semInfo;
+  if(err){sem.nube=err.status===401?luz('rojo','Token rechazado','token'):luz('rojo','No responde: '+traduce(err),'caida');sem.ciclos=sem.ciclos||luz('gris','Sin datos');sem.exchange=sem.exchange||luz('gris','Sin datos');return}
+  var v=info.version||'1.0.0';
+  sem.nube=versionNum(v)<versionNum(APP_VERSION)?luz('amarillo','v'+v+' (la app es v'+APP_VERSION+') · '+ms+' ms','vieja',{ms:ms}):ms>3000?luz('amarillo','Responde lento · '+ms+' ms','lenta',{ms:ms}):luz('verde','En línea · v'+v,null,{ms:ms});
+  var edad=info.actualizado?(Date.now()-info.actualizado)/60000:null;
+  if(semGH&&semGH.off)sem.ciclos=luz('rojo','GitHub apagó los ciclos automáticos','wf_off');
+  else if(!info.ciclo)sem.ciclos=luz('rojo','Ningún ciclo todavía','sin_ciclos');
+  else if(semGH&&semGH.fallo)sem.ciclos=luz('rojo','El último ciclo falló'+(semGH.paso?' en «'+semGH.paso+'»':''),'run_fallo');
+  else if(edad>90)sem.ciclos=luz('rojo','Sin ciclos hace '+Math.round(edad)+' min','atrasado');
+  else if(!info.ok)sem.ciclos=luz('rojo','Ciclo #'+info.ciclo+' con error: '+(info.errores||[])[0],'ciclo_error');
+  else if(info.pausado)sem.ciclos=luz('amarillo','Ciclo #'+info.ciclo+' · bot en pausa','pausado');
+  else if(edad>45)sem.ciclos=luz('amarillo','Último ciclo hace '+Math.round(edad)+' min (cada 30)','atrasado');
+  else sem.ciclos=luz('verde','Ciclo #'+info.ciclo+' '+hace(info.actualizado)+(semGH&&semGH.corriendo?' · uno corriendo ahora':''));
+  var errs=info.errores||[],exErr=(info.real&&info.real.error)||errs.filter(function(x){return /ErrorExchange|exchange|API key|clave|401|403|Invalid|apiKey|signature/i.test(x)&&!/IA|modelo/.test(x)})[0];
+  var ex=String(info.exchange||'exchange').replace('_',' ');
+  if(exErr)sem.exchange=luz('rojo',ex+': '+String(exErr).slice(0,140),/401|403|clave|key|signature|Invalid|autoriz/i.test(exErr)?'ex_claves':'ex_error');
+  else if(sinMercado().length)sem.exchange=luz('amarillo',ex+' no tiene: '+sinMercado().join(', '),'sin_mercado');
+  else if(info.libre!=null&&info.monto_min&&info.libre<info.monto_min)sem.exchange=luz('amarillo',ex+' · libre '+num(info.libre,2)+' '+(info.quote||'')+' < mínimo '+info.monto_min,'saldo');
+  else sem.exchange=info.exchange?luz('verde',ex+' conectado'+(info.modo==='real'?' · dinero real':' · simulación')):luz('gris','Sin datos');
+  var I=info.ia||{};
+  if(I.modo==='off')sem.ia=luz('gris','Apagada en tu estrategia');
+  else if(semIA){
+    var fallos=(I.ultimas||[]).filter(function(l){return !l.ok}).length;
+    if(semIA.ok)sem.ia=semIA.ms>20000||fallos?luz('amarillo',semIA.modelo+' · '+(semIA.ms/1000).toFixed(1)+' s'+(fallos?' · '+fallos+' fallo(s) en el ciclo':''),'ia_lenta',{ms:semIA.ms}):luz('verde',semIA.modelo+' respondió · '+(semIA.proveedor||''),null,{ms:semIA.ms});
+    else sem.ia=luz('rojo',semIA.error||'No responde',semIA.codigo==='sin_ia'||semIA.codigo==='sin_modelos'?'sin_ia':semIA.codigo==='clave'?'clave_ia':'ia_caida');
+  }else{var l=(I.ultimas||[])[0];sem.ia=!I.proveedor?luz('rojo','Sin proveedor de IA','sin_ia'):l?luz(l.ok?'verde':'amarillo',(l.ok?'Respondió ':'Falló ')+hace(l.ts)+' · '+(l.modelo||''),l.ok?null:'ia_lenta'):luz('gris','Probando…')}
+}
+function revisarGH(){
+  if(S.demo||!S.gh||!S.gh.token||!S.gh.owner){semGH=null;return Promise.resolve()}
+  var base='/repos/'+S.gh.owner+'/'+S.gh.repo+'/actions';
+  return Promise.all([gh('GET',base+'/workflows/ciclo.yml'),gh('GET',base+'/workflows/ciclo.yml/runs?per_page=5')]).then(function(r){
+    var g={off:r[0].status===200&&/^disabled/.test(r[0].data.state||''),fallo:false};
+    var runs=(r[1].data&&r[1].data.workflow_runs)||[],ult=runs.filter(function(x){return x.status==='completed'})[0];
+    g.corriendo=runs.some(function(x){return x.status!=='completed'});
+    if(ult&&ult.conclusion==='failure'){g.fallo=true;g.url=ult.html_url;
+      return gh('GET',base+'/runs/'+ult.id+'/jobs').then(function(j){var st=((j.data.jobs||[])[0]||{}).steps||[];var m=st.filter(function(x){return x.conclusion==='failure'})[0];if(m)g.paso=m.name;semGH=g}).catch(function(){semGH=g})}
+    semGH=g;
+  }).catch(function(){semGH=null});
+}
+function revisarSemaforo(probarIA,conGH){
+  if(!S.url&&!S.demo)return Promise.resolve();
+  var t0=Date.now(),pasos=[];
+  if(conGH||!semGH||Date.now()-(semGH.ts||0)>120000)pasos.push(revisarGH().then(function(){if(semGH)semGH.ts=Date.now()}));
+  if(probarIA)pasos.push(api('/api/ia/probar',{}).then(function(r){r.ts=Date.now();semIA=r}).catch(function(e){if(e.status!==404)semIA={ok:false,codigo:'caida',error:traduce(e)}}));
+  var pide=api('/api/semaforo').then(function(info){return [info,Date.now()-t0,null]}).catch(function(e){
+    if(e.status===404)return api('/api/estado').then(function(es){var u=es.ultimo||{},c=es.config||{};return [{version:es.version,ciclo:es.ciclo,actualizado:es.actualizado,ok:u.ok!==false&&!!es.ciclo,errores:u.errores||[],exchange:u.exchange,modo:c.modo,pausado:c.pausado,real:u.real,libre:u.libre,monto_min:c.monto_min,quote:c.quote,ia:{modo:c.ia,proveedor:u.ia&&u.ia.modelo?'?':null,ultimas:[]}},Date.now()-t0,null]});
+    throw e}).catch(function(e){return [null,0,e]});
+  return Promise.all([pide].concat(pasos)).then(function(r){evaluarSem(r[0][0],r[0][1],r[0][2]);semUlt=Date.now();pintarSemaforo()});
+}
+function pintarSemaforo(){
+  if(!$('semLuces'))return;
+  var L={rojo:'r',amarillo:'a',verde:'v'};
+  $('semLuces').innerHTML=Object.keys(SEM_NOMBRES).map(function(k){var x=sem[k]||luz('gris','Revisando…'),c=L[x.nivel]||'';
+    return '<div class="sem-fila" data-sem="'+k+'" data-nivel="'+x.nivel+'"><span class="sem-caja" aria-hidden="true"><i class="r'+(c==='r'?' on r':'')+'"></i><i class="a'+(c==='a'?' on a':'')+'"></i><i class="v'+(c==='v'?' on v':'')+'"></i></span>'+
+      '<span class="info"><b>'+SEM_NOMBRES[k]+'</b><small>'+esc(x.detalle)+'</small></span>'+(x.ms!=null?'<span class="ms">'+(x.ms>=1000?(x.ms/1000).toFixed(1)+' s':x.ms+' ms')+'</span>':'')+'</div>'}).join('');
+  var w=peor();$('semPill').innerHTML='<i></i>'+{rojo:'HAY FALLAS',amarillo:'REVISAR',verde:'TODO BIEN',gris:'—'}[w];$('semPill').className='pill live '+(w==='rojo'?'bad':w==='amarillo'?'warn':'');
+  var ay=[];Object.keys(SEM_NOMBRES).forEach(function(k){var x=sem[k];if(!x||!x.codigo||!AYUDA[x.codigo])return;var A=AYUDA[x.codigo];
+    var acc=(A.a||[]).filter(function(id){return !ARREGLOS[id].gh||(S.gh&&S.gh.token)});
+    ay.push('<div class="sem-ayuda'+(x.nivel==='rojo'?' r':'')+'"><b>'+SEM_NOMBRES[k]+': '+esc(A.t)+'</b>'+(A.p.length?'<ol>'+A.p.map(function(p){return '<li>'+esc(p)+'</li>'}).join('')+'</ol>':'')+
+      ((A.a||[]).some(function(id){return ARREGLOS[id].gh})&&!(S.gh&&S.gh.token)?'<small class="warn-text">Para arreglarlo desde aquí necesitas tu token de GitHub (Cambiar claves).</small>':'')+
+      acc.map(function(id){return '<button class="small'+(ARREGLOS[id].seguro?' primary':'')+'" data-arreglo="'+id+'" style="margin-right:6px">'+esc(ARREGLOS[id].t)+'</button>'}).join('')+'</div>')});
+  $('semAyuda').innerHTML=ay.join('');
+  $('semTs').textContent=semUlt?'Revisado '+hora(semUlt)+' · se actualiza solo cada 20 s mientras estás en Config':'—';
+}
+function aplicarArreglo(id){var A=ARREGLOS[id];if(!A)return Promise.resolve('');if(A.gh&&!(S.gh&&S.gh.token))return Promise.reject(new Error('Falta tu token de GitHub'));if(S.demo)return Promise.resolve('(Demo) '+A.t);return A.f()}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-arreglo]');if(!b)return;b.disabled=true;
+  aplicarArreglo(b.getAttribute('data-arreglo')).then(function(m){toast(m||'Hecho');return espera(1500).then(function(){return revisarSemaforo(false,true)})}).catch(function(er){toast(traduce(er),true)}).then(function(){b.disabled=false})});
+$('semRevisar').onclick=function(){var b=$('semRevisar');b.disabled=true;revisarSemaforo(true,true).then(function(){b.disabled=false;toast('Semáforo actualizado')})};
+$('semArreglar').onclick=function(){autoCorregir()};
+function autoCorregir(){
+  if(semCorriendo)return Promise.resolve();semCorriendo=true;
+  var box=$('semDiag'),b=$('semArreglar');box.className='diag-log';box.innerHTML='';b.disabled=true;
+  function log(t,c){var d=document.createElement('div');d.className=c||'';d.textContent=t;box.appendChild(d);box.scrollTop=box.scrollHeight}
+  log('▸ Revisando nube, ciclos, IA y exchange…');
+  return revisarSemaforo(false,true).then(function(){
+    var noIA=sem.ia&&sem.ia.nivel==='gris'&&/Apagada/.test(sem.ia.detalle);
+    if(noIA)return;log('▸ Probando cada modelo de IA…');
+    return api('/api/ia/probar',{todos:true}).then(function(r){r.ts=Date.now();semIA=r;
+      (r.pruebas||[]).forEach(function(p){log('  '+(p.ok?'✓ ':'✗ ')+p.modelo+(p.ok?' · '+(p.ms/1000).toFixed(1)+' s':' · '+(p.error||'')),p.ok?'ok':'mal')});
+      if(r.preferido_nuevo)log('  ✓ Arreglado: '+r.preferido_nuevo+' queda como modelo principal','ok');
+      if(!r.ok&&!(r.pruebas||[]).length)log('  ✗ '+(r.error||'IA no disponible'),'mal');
+    }).catch(function(e){log('  ✗ No pude probar la IA: '+traduce(e),'mal')}).then(function(){evaluarSem(semInfo,(sem.nube||{}).ms||0,null)});
+  }).then(function(){
+    pintarSemaforo();
+    var hall=[],ids=[];
+    Object.keys(SEM_NOMBRES).forEach(function(k){var x=sem[k];if(!x)return;log((x.nivel==='verde'?'  ✓ ':x.nivel==='gris'?'  · ':'  ✗ ')+SEM_NOMBRES[k]+': '+x.detalle,x.nivel==='verde'?'ok':x.nivel==='rojo'?'mal':x.nivel==='amarillo'?'av':'');
+      if(x.codigo&&(x.nivel==='rojo'||x.nivel==='amarillo')){hall.push({id:k,estado:x.nivel,detalle:x.detalle+' ('+x.codigo+')'});((AYUDA[x.codigo]||{}).a||[]).forEach(function(id){if(ids.indexOf(id)<0&&id!=='ia_todos')ids.push(id)})}});
+    if(!hall.length){log('✓ Todo funciona: no hay nada que corregir.','ok');return}
+    var disp=ids.filter(function(id){return !ARREGLOS[id].gh||(S.gh&&S.gh.token)});
+    var seguros=disp.filter(function(id){return ARREGLOS[id].seguro});
+    var iaOk=sem.ia&&sem.ia.nivel!=='rojo'&&!(sem.ia.nivel==='gris'&&/Apagada/.test(sem.ia.detalle));
+    var consulta=iaOk?(log('▸ Pidiendo a la IA que explique el problema…'),api('/api/ia/diagnosticar',{hallazgos:hall,arreglos:disp.map(function(id){return {id:id,texto:ARREGLOS[id].t}})}).then(function(r){
+        log('◎ IA ('+(r.modelo||'')+'): '+(r.resumen||'sin resumen'));(r.pasos||[]).forEach(function(p,i){log('   '+(i+1)+'. '+p)});return r.arreglos||[]}).catch(function(e){log('  ✗ La IA no pudo analizarlo: '+traduce(e)+'. Sigo con los arreglos seguros.','av');return []}))
+      :(log('  · La IA no está disponible: aplico solo los arreglos seguros.','av'),Promise.resolve([]));
+    return consulta.then(function(elegidos){
+      // Los seguros se aplican siempre; los que cambian algo tuyo, solo si la IA los
+      // eligió, y con tu confirmación (quedan como botón).
+      var auto=seguros.filter(function(id){return id!=='ciclo'||sem.ciclos&&sem.ciclos.nivel!=='verde'});
+      if(auto.indexOf('activar_wf')>=0&&auto.indexOf('ciclo')<0)auto.push('ciclo');
+      if(auto.indexOf('reinstalar')>=0)auto=['reinstalar'];
+      var i=0;
+      function sig(){if(i>=auto.length)return Promise.resolve();var id=auto[i++];log('▸ '+ARREGLOS[id].t+'…');
+        return aplicarArreglo(id).then(function(m){log('  ✓ '+m,'ok')}).catch(function(e){log('  ✗ '+traduce(e),'mal')}).then(sig)}
+      return sig().then(function(){
+        var manuales=elegidos.filter(function(id){return !ARREGLOS[id].seguro&&disp.indexOf(id)>=0});
+        if(manuales.length){var d=document.createElement('div');d.innerHTML='<div style="margin-top:6px">La IA recomienda (necesita tu confirmación):</div>'+manuales.map(function(id){return '<button class="small primary" data-arreglo="'+id+'" style="margin:5px 6px 0 0">'+esc(ARREGLOS[id].t)+'</button>'}).join('');box.appendChild(d)}
+        var quedan=hall.filter(function(h){var c=(sem[h.id]||{}).codigo;return !((AYUDA[c]||{}).a||[]).some(function(id){return ARREGLOS[id].seguro})});
+        if(quedan.length)log('· Lo que no se arregla solo tiene instrucciones arriba, en cada luz.','av');
+      });
+    });
+  }).catch(function(e){log('✗ '+traduce(e),'mal')}).then(function(){semCorriendo=false;b.disabled=false;
+    log('▸ Vuelvo a revisar en 20 s…');setTimeout(function(){revisarSemaforo(false,true)},S.demo?50:20000)});
+}
+setInterval(function(){if(!document.hidden&&vista==='config'&&!semCorriendo)revisarSemaforo(Date.now()-((semIA&&semIA.ts)||0)>300000)},20000);
+function semAlAbrir(){if(Date.now()-semUlt>15000){pintarSemaforo();revisarSemaforo(!semIA||Date.now()-(semIA.ts||0)>300000)}}
+
 // ---------------------------------------------------------------- Atrás (Android)
 window.appBack=function(){
   if($('tuto').classList.contains('open')){if(tutoI>0){tutoI--;pintarTuto()}else cerrarTuto();return true}
   if($('modal').classList.contains('open')){$('mNo').click();return true}
+  if($('grafModal').classList.contains('open')){cerrarGrafica();return true}
   if($('onb').classList.contains('open')){var i=ORDEN.indexOf(pasoActual);if(pasoActual==='conectar'){irPaso('inicio');return true}if(i>0&&!instalando){irPaso(ORDEN[i-1]);return true}return !instalando?false:true}
   var act=document.querySelector('.screen.active');if(act&&act.id!=='panel'){irA('panel');return true}
   return false;
@@ -1690,6 +2009,17 @@ var DEMO=(function(){
     if(ruta==='/api/radar/pedir')return {ok:true};
     if(ruta==='/api/config'){if(cuerpo){for(var k in cuerpo)if(k!=='confirmar_real')cfg[k]=cuerpo[k]}return {ok:true,config:cfg}}
     if(ruta==='/api/control'){if(cuerpo.accion==='pausar')cfg.pausado=true;if(cuerpo.accion==='reanudar')cfg.pausado=false;return {ok:true}}
+    if(ruta.indexOf('/api/graficas')===0){
+      var sy=decodeURIComponent(ruta.split('simbolo=')[1]||''),a0=activos.concat(radar).filter(function(x){return x.simbolo===sy})[0],marcos={};
+      if(a0&&a0.precio!==1)[['1h',36e5,0.004],['4h',144e5,0.009],['1d',864e5,0.025]].forEach(function(m,k){var c=[],t=[],p=a0.precio;
+        for(var i=0;i<100;i++){c.unshift(Number(p.toPrecision(6)));t.unshift(ahora-i*m[1]);p=p/(1+Math.sin((i+k*7+sy.length)/5)*m[2]+Math.cos(i/2.3)*m[2]*0.6)}marcos[m[0]]={t:t,c:c}});
+      return {simbolo:sy,ts:ahora-600000,exchange:'kraken',quote:'USDT',marcos:marcos};
+    }
+    if(ruta==='/api/semaforo')return {version:APP_VERSION,ciclo:58,actualizado:ahora-600000,ok:true,errores:[],exchange:'kraken',modo:cfg.modo,pausado:cfg.pausado,real:null,libre:312.4,monto_min:cfg.monto_min,quote:'USDT',objetivo:cfg.objetivo,
+      ia:{modo:cfg.ia,proveedor:'kilo.ai',modelos:['kilo-auto/free','nvidia/nemotron-3-super-120b-a12b:free'],ultimas:[{ts:ahora-605000,ok:true,modelo:'nvidia/nemotron-3-super-120b-a12b:free',ms:1300},{ts:ahora-606000,ok:false,modelo:'kilo-auto/free',ms:400}]}};
+    if(ruta==='/api/ia/probar')return cuerpo&&cuerpo.todos?{ok:true,proveedor:'kilo.ai',modelo:'nvidia/nemotron-3-super-120b-a12b:free',ms:1300,preferido_nuevo:'nvidia/nemotron-3-super-120b-a12b:free',pruebas:[{modelo:'kilo-auto/free',ok:false,ms:400,error:'kilo.ai HTTP 429 con kilo-auto/free'},{modelo:'nvidia/nemotron-3-super-120b-a12b:free',ok:true,ms:1300}]}
+      :{ok:true,proveedor:'kilo.ai',modelo:'nvidia/nemotron-3-super-120b-a12b:free',ms:1300,pruebas:[{modelo:'nvidia/nemotron-3-super-120b-a12b:free',ok:true,ms:1300}]};
+    if(ruta==='/api/ia/diagnosticar')return {modelo:'demo',resumen:'(Demo) El primer modelo gratuito estaba saturado (HTTP 429); ya quedó como principal uno que responde.',pasos:['No tienes que hacer nada más.'],arreglos:[]};
     if(ruta==='/api/avisos/probar'){feed.unshift({id:String(Date.now()),ts:Date.now(),kind:'prueba',title:'¡Kumo conectado! ☁️',body:'Prueba'});return {ok:true}}
     return {};
   }};
@@ -1744,7 +2074,7 @@ aplicarTema(S.tema||'pro');
 $('appVer').textContent='v'+APP_VERSION;
 setTimeout(function(){buscarActualizacion(false)},2500);
 if(!S.onb||(!S.url&&!S.demo)){abrirOnb('hola');if(!S.tuto)abrirTuto(0)}else iniciarApp();
-window.__kumo={tuto:function(){return tutoI},S:S,datos:datos,irPaso:irPaso,irA:irA,W:function(){return W},pintarEstado:pintarEstado};
+window.__kumo={tuto:function(){return tutoI},S:S,datos:datos,irPaso:irPaso,irA:irA,W:function(){return W},pintarEstado:pintarEstado,rsiSerie:rsiSerie,macdSerie:macdSerie};
 })();
 </script>
 </body>
