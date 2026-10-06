@@ -3,6 +3,16 @@
 Para actualizar: instala la APK nueva encima de la anterior (se conservan tus datos) y en la app
 toca **Config → Actualizar nube** para que tu nube reciba el código nuevo.
 
+## v1.5.2 — Mercados de predicción de Hyperliquid
+
+- Las posiciones en **mercados de predicción de Hyperliquid (HIP-4)**, que antes aparecían como
+  códigos «+90151», ahora salen en **Cartera → 🎲 Predicciones** con su pregunta
+  («¿BTC ≥ 85 501 al vencer?»), tu lado (Sí/No), valor actual, cuánto cobras si aciertas,
+  la probabilidad que les da el mercado y cuándo vencen.
+- Su valor se suma a tu total en dinero real (antes parecía que ese dinero había desaparecido).
+- La estrategia nunca los compra ni los vende, y ya no aparece la nota «Sin par USDC para: +90151…».
+- Necesita **actualizar la nube** (Config → Actualizar nube); con una nube anterior la app avisa.
+
 ## v1.5.1 — Modo simple y donaciones en USDC
 
 - **🌱 Modo simple:** abajo solo Panel, Cartera y Config. El Panel muestra lo que dice la IA

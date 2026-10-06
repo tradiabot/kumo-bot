@@ -100,6 +100,8 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   ok(/Ciclo #58/.test(d.getElementById('iaCab').textContent)&&/nemotron/.test(d.getElementById('iaCab').textContent),'cabecera: ciclo, hora y modelo');
   // ---- Gráficas por activo
   click(d,'.nav [data-target="cartera"]');await espera(30);
+  {const pl=d.getElementById('predLista').textContent;
+   ok(!d.getElementById('predPanel').classList.contains('oculto')&&/¿BTC ≥ 85 501 al vencer\?/.test(pl)&&/NO/.test(pl)&&/2,55 USDT/.test(pl)&&/cobras 5 USDT/.test(pl)&&/le da 51%/.test(pl)&&/vence en 12 h/.test(pl),'Cartera: predicción con nombre, lado, valor, pago y vencimiento');}
   ok(d.querySelectorAll('#activos [data-graf]').length===3&&!d.querySelector('#activos [data-graf="USDT"]'),'activos tocables (sin la moneda base)');
   click(d,'#activos [data-graf="BTC"] .info');await espera(40);
   const G=()=>d.getElementById('grafCuerpo');
@@ -208,7 +210,7 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
     if(url.startsWith(appUrl)){
       const tok=(o.headers||{}).Authorization;
       if(tok!=='Bearer '+secretos.KUMO_APP_TOKEN)return R(401,{error:'Token inválido'});
-      if(p==='/api/estado')return R(200,{config:{modo:'simulacion',quote:'USD',objetivo:{}},ciclo:0,ultimo:{quote:'USDC',exchange:'hyperliquid',total:1000,real:{libre:0,estables:0,perps_usdc:25.5,saldos:{HYPE:1.25}}}});
+      if(p==='/api/estado')return R(200,{config:{modo:'simulacion',quote:'USD',objetivo:{}},ciclo:0,ultimo:{quote:'USDC',exchange:'hyperliquid',total:1000,real:{libre:0,estables:0,perps_usdc:25.5,saldos:{HYPE:1.25,'+90151':5}}}});
       if(p==='/api/config')return R(200,{ok:true,config:{quote:JSON.parse(o.body||'{}').quote}});
     }
     return R(404,{message:'no mock '+url});
@@ -284,6 +286,8 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   ok(d.getElementById('conn').textContent.includes('EN LÍNEA'),'app en línea con la nube nueva');
   await espera(100);const sr=d.getElementById('saldoReal');
   ok(!sr.classList.contains('oculto')&&/Saldo real en hyperliquid/.test(sr.textContent)&&/25,5 USDC en Perps/.test(sr.textContent)&&/HYPE 1,25/.test(sr.textContent)&&/simulación/.test(sr.textContent),'panel: saldo real del exchange visible en simulación, con aviso de Perps ('+sr.textContent.slice(0,80)+')');
+  ok(!/\+90151 5/.test(sr.textContent)&&/🎲 1 predicción/.test(sr.textContent),'saldo real: las predicciones no salen como «+90151 5»');
+  ok(!d.getElementById('predPanel').classList.contains('oculto')&&/Actualiza tu nube/.test(d.getElementById('predLista').textContent),'nube vieja: avisa que hay predicciones y que actualice');
   {const K=w.__kumo,ea=K.datos.estado;ok(K.S.clavesTs>0,'guarda cuándo se cambiaron las claves');
    K.datos.estado={...ea,actualizado:K.S.clavesTs-3600000,ultimo:{ok:false,exchange:'cryptocom_app',errores:['ErrorExchange: Crypto.com App: claves rechazadas (401)']}};
    K.pintarEstado();const av=d.getElementById('erroresAviso');

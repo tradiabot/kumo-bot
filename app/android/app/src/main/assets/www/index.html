@@ -330,6 +330,8 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 html[data-simple] .nav button:not(.simple-ok){display:none}
 html[data-simple] .solo-completo{display:none!important}
 html:not([data-simple]) .solo-simple{display:none!important}
+.pred{border-top:1px dashed var(--line);padding:10px 0}.pred:first-child{border-top:0}
+.pred .prob{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:6px}.pred .prob i{display:block;height:100%;background:var(--acento2)}
 .dice{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px}
 .simple-orden{border-top:1px dashed var(--line);padding:10px 0}
 .simple-orden:first-child{border-top:0}
@@ -660,6 +662,9 @@ html:not([data-simple]) .solo-simple{display:none!important}
 <section id="cartera" class="screen" aria-label="Cartera">
   <div class="section-head"><div><span class="eyebrow"><span class="kata">財布</span>PORTAFOLIO</span><h2>Cartera</h2></div></div>
   <div class="panel"><div class="panel-title"><span>Activos · barra = peso, marca = objetivo</span></div><div id="activos"><p class="empty">—</p></div></div>
+  <div class="panel oculto" id="predPanel"><div class="panel-title"><span>🎲 Predicciones · Hyperliquid</span><span id="predTotal" class="pill">—</span></div>
+    <div id="predLista"></div>
+    <small class="muted" style="display:block;margin-top:6px">Mercados de predicción de tu cuenta. Cada unidad paga 1 USDC si aciertas y 0 si no; el precio es la probabilidad que le da el mercado. Kumo solo los muestra: no los compra ni los vende.</small></div>
   <div class="panel"><div class="panel-title"><span>Operaciones</span><span id="opsCuenta" class="pill">0</span></div><div id="operaciones"><p class="empty">—</p></div></div>
 </section>
 
@@ -786,7 +791,7 @@ html:not([data-simple]) .solo-simple{display:none!important}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.5.1';
+var APP_VERSION='1.5.2';
 // Versión mínima del código de la nube que esta app necesita (runner/version.txt).
 // Solo sube cuando cambian runner/ o worker/: si no, el semáforo marcaría «nube vieja» sin motivo.
 var NUBE_MIN='1.5.0';
@@ -1264,7 +1269,9 @@ function pintarEstado(){
   if(!R)sr.className='notice oculto';
   else if(R.error){sr.className='notice warn';sr.innerHTML='<b>Saldo real en '+exN+'</b><br>No pude leerlo: '+esc(R.error)}
   else{
-    var otros=Object.keys(R.saldos||{}).filter(function(k){return k!==u.quote}).slice(0,4).map(function(k){return esc(k)+' '+num(R.saldos[k],4)}).join(' · ');
+    var otros=Object.keys(R.saldos||{}).filter(function(k){return k!==u.quote&&!/^\+\d+$/.test(k)}).slice(0,4).map(function(k){return esc(k)+' '+num(R.saldos[k],4)}).join(' · ');
+    var nPred=(u.predicciones||[]).length||Object.keys(R.saldos||{}).filter(function(k){return /^\+\d+$/.test(k)}).length;
+    if(nPred)otros+=(otros?' · ':'')+'🎲 '+nPred+' predicci'+(nPred===1?'ón':'ones')+(u.valor_predicciones?' ≈ '+num(u.valor_predicciones,2)+' '+esc(u.quote||''):'')+' (en Cartera)';
     sr.className='notice'+(R.perps_usdc&&!R.libre?' warn':'');
     sr.innerHTML='<b>Saldo real en '+exN+'</b>: '+num(R.libre,2)+' '+esc(u.quote||'')+' libres'+
       (R.perps_usdc&&R.libre<1?'<br>'+num(R.perps_usdc,2)+' USDC en Perps: pásalos a Spot en Hyperliquid (Transfer → Perps a Spot) para que Kumo los use.':'')+
@@ -1292,7 +1299,21 @@ function pintarEstado(){
     var tap=a.simbolo!==u.quote&&!/^(USD|USDT|USDC|DAI|EUR)$/.test(a.simbolo);
     return '<div class="row'+(tap?' tap" data-graf="'+esc(a.simbolo)+'"':'"')+'><span class="info"><b>'+esc(a.simbolo)+'</b>'+(tap?' <span class="ver-g">📈 VER GRÁFICA</span>':'')+' <small>'+num(a.cantidad,6)+' · '+precio(a.precio)+(a.costo?' · costo '+precio(a.costo):'')+(costos[a.simbolo]&&costos[a.simbolo].estimado?' (estimado)':'')+'</small><div class="bar"><i style="width:'+Math.min(100,a.peso)+'%"></i>'+(obj?'<em style="left:'+Math.min(99,obj)+'%"></em>':'')+'</div></span><span style="text-align:right"><b>'+num(a.valor,2)+'</b><small class="'+clsPct(a.pnl)+'">'+(a.pnl!=null?pct(a.pnl):num(a.peso,1)+'%')+'</small></span></div>';
   }).join('')||'<p class="empty">Sin activos todavía.</p>';
+  pintarPredicciones(u);
   pintarSimple();
+}
+// Mercados de predicción (HIP-4) de la cuenta de Hyperliquid. Nubes < 1.5.2 solo
+// mandan los códigos «+N» dentro del saldo real: se avisa que hay que actualizar.
+function venceEn(ms){if(!ms)return '';var m=Math.round((ms-Date.now())/60000);if(m<=0)return 'vencido: se liquida solo';if(m<60)return 'vence en '+m+' min';if(m<2880)return 'vence en '+Math.round(m/60)+' h';return 'vence en '+Math.round(m/1440)+' días'}
+function pintarPredicciones(u){
+  var P=u.predicciones||[],viejos=Object.keys((u.real&&u.real.saldos)||{}).filter(function(k){return /^\+\d+$/.test(k)});
+  $('predPanel').classList.toggle('oculto',!P.length&&!viejos.length);
+  if(!P.length){$('predTotal').textContent=viejos.length;$('predLista').innerHTML=viejos.length?'<p class="notice warn">Tienes '+viejos.length+' posiciones en mercados de predicción ('+viejos.map(esc).join(', ')+'). Actualiza tu nube (Config → Actualizar nube) para verlas con nombre y valor.</p>':'';return}
+  $('predTotal').textContent=u.valor_predicciones!=null?num(u.valor_predicciones,2)+' '+(u.quote||''):P.length;
+  $('predLista').innerHTML=P.map(function(p){var pr=p.precio!=null?Math.round(p.precio*100):null,si=/^S/i.test(p.lado_nombre||'');
+    return '<div class="pred"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(p.pregunta)+'</b><span class="badge '+(si?'buy':'sell')+'">'+esc(String(p.lado_nombre||'').toUpperCase())+'</span></div>'+
+      '<small>'+num(p.cantidad,2)+' × '+(p.precio!=null?num(p.precio,3):'—')+' = <b>'+(p.valor!=null?num(p.valor,2)+' '+esc(p.quote||''):'sin precio')+'</b> · si aciertas cobras '+num(p.pago_si_acierta,2)+' '+esc(p.quote||'')+(p.vence?' · '+venceEn(p.vence)+' ('+hora(p.vence)+')':'')+'</small>'+
+      (pr!=null?'<div class="prob" title="Probabilidad según el mercado"><i style="width:'+pr+'%"></i></div><small class="muted">El mercado le da '+pr+'% a «'+esc(p.lado_nombre)+'»</small>':'')+'</div>'}).join('');
 }
 // ---------------------------------------------------------------- Señales de la IA
 // Lo que la IA dijo en cada ciclo y qué pasó con cada orden. Se refresca cada
@@ -2055,7 +2076,7 @@ var DEMO=(function(){
     {id:'d2',ts:ahora-3600000,origen:'usuario',estado:'aprobada',simbolo:'ETH',accion:'COMPRAR',monto:15,quote:'USDT',limite:2600,nota:'Esperando precio ≤ 2600 (ahora 2686)',vence:ahora+50000000,historia:[{ts:ahora-3600000,quien:'usuario',texto:'Creada'}]},
     {id:'d3',ts:ahora-86400000,origen:'ia',estado:'ejecutada',simbolo:'BTC',accion:'VENDER',pct:50,quote:'USDT',razon:'Sobre su objetivo con ganancia.',resultado:{precio:85400,total:25.6,ts:ahora-86000000},historia:[]}];
   var feed=[{id:'1',ts:ahora-1800000,kind:'operacion',title:'🧪 Compra SOL',body:'24.00 USDT a 139.9 · bajo su objetivo y RSI 33'},{id:'2',ts:ahora-86400000,kind:'operacion',title:'🧪 Venta BTC',body:'25.60 USDT a 85400 · ganancia 4.0%'}];
-  function estado(){return {version:'1.0.0',config:cfg,ciclo:58,actualizado:ahora-600000,historial:h,costos:{BTC:{costo:82110},ETH:{costo:2702,estimado:true},SOL:{costo:136.2}},ultimo:{ok:true,exchange:'kraken',modo:cfg.modo,quote:'USDT',total:1034.7,libre:312.4,activos:activos,propuestas:[{simbolo:'SOL',accion:'COMPRAR',monto:24,motivo:'bajo su objetivo (5.6% de 10%) y RSI 33'}],bloqueadas:[],ejecutadas:[ops[0]],notas:['ETH: vendería, pero no hay ganancia suficiente (-0.6%)'],errores:[],ia:{modelo:'qwen/qwen3.8-27b',modo:'veto',opiniones:{SOL:{accion:'COMPRAR',confianza:68,razon:'Rebote desde soporte con RSI bajo y volumen estable.'}}}}}}
+  function estado(){return {version:'1.0.0',config:cfg,ciclo:58,actualizado:ahora-600000,historial:h,costos:{BTC:{costo:82110},ETH:{costo:2702,estimado:true},SOL:{costo:136.2}},ultimo:{ok:true,exchange:'kraken',modo:cfg.modo,quote:'USDT',total:1034.7,libre:312.4,activos:activos,propuestas:[{simbolo:'SOL',accion:'COMPRAR',monto:24,motivo:'bajo su objetivo (5.6% de 10%) y RSI 33'}],bloqueadas:[],ejecutadas:[ops[0]],notas:['ETH: vendería, pero no hay ganancia suficiente (-0.6%)'],errores:[],predicciones:[{coin:'+90151',mercado:9015,lado:1,lado_nombre:'No',pregunta:'¿BTC ≥ 85 501 al vencer?',cantidad:5,precio:0.51,valor:2.55,pago_si_acierta:5,vence:ahora+12*36e5,quote:'USDT'}],valor_predicciones:2.55,ia:{modelo:'qwen/qwen3.8-27b',modo:'veto',opiniones:{SOL:{accion:'COMPRAR',confianza:68,razon:'Rebote desde soporte con RSI bajo y volumen estable.'}}}}}}
   return {api:function(ruta,cuerpo){
     if(ruta==='/api/estado')return estado();
     if(ruta==='/api/operaciones')return {operaciones:ops};
