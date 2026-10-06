@@ -526,6 +526,8 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
       <div class="metric"><span>Libre para comprar</span><b id="libre">—</b></div>
       <div class="metric"><span>IA</span><b id="iaModelo">—</b></div>
     </div>
+    <div id="cicloProg" class="prog" role="progressbar" aria-label="Ciclo de la nube" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="prog-barra"><i id="cicloBarra"></i></div><b id="cicloPct">0%</b></div>
+    <small id="cicloTxt" class="muted">—</small>
     <p id="saldoReal" class="notice oculto" style="margin-top:9px"></p>
     <div class="grid two" style="margin-top:9px"><button id="cicloAhora" class="primary">▶ CICLO AHORA</button><button id="pausaBtn" class="danger">PAUSAR</button></div>
   </div>
@@ -651,7 +653,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.3.5';
+var APP_VERSION='1.3.6';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -941,7 +943,8 @@ function lanzarWorkflow(owner,repo,wf,rama){
 }
 // Espera a que termine el workflow. Si se le da «avance(fraccion)», informa qué
 // parte de los pasos del job ya terminó (según GitHub) para la barra de progreso.
-function esperarRun(owner,repo,wf,desde,linea,avance){
+function esperarRun(owner,repo,wf,desde,linea,avance,etiqueta){
+  etiqueta=etiqueta||'Instalando en Cloudflare';
   var t0=Date.now();
   function pasos(run){
     if(!avance)return Promise.resolve('');
@@ -959,13 +962,13 @@ function esperarRun(owner,repo,wf,desde,linea,avance){
       var run=(r.data.workflow_runs||[]).filter(function(x){return Date.parse(x.created_at)>=desde-60000})[0];
       var seg=Math.round((Date.now()-t0)/1000);
       if(!run){linea.textContent='Esperando a GitHub Actions… ('+seg+' s)';return null}
-      if(run.status==='completed'){if(run.conclusion==='success'){if(avance)avance(1);return run}var e=new Error('La instalación falló en GitHub Actions. Revisa el detalle en: '+run.html_url);e.url=run.html_url;throw e}
+      if(run.status==='completed'){if(run.conclusion==='success'){if(avance)avance(1);return run}var e=new Error(etiqueta.replace(/^Instalando.*/,'La instalación')+' falló en GitHub Actions. Revisa el detalle en: '+run.html_url);e.url=run.html_url;throw e}
       return pasos(run).then(function(paso){
-        linea.textContent='Instalando en Cloudflare… '+({queued:'en cola',in_progress:'en curso'}[run.status]||run.status)+paso+' ('+seg+' s)';return null;
+        linea.textContent=etiqueta+'… '+({queued:'en cola',in_progress:'en curso'}[run.status]||run.status)+paso+' ('+seg+' s)';return null;
       });
     }).then(function(run){
       if(run)return run;
-      if(Date.now()-t0>12*60000)throw new Error('La instalación tarda demasiado. Revisa la pestaña Actions de tu repositorio.');
+      if(Date.now()-t0>12*60000)throw new Error(etiqueta.replace(/^Instalando.*/,'La instalación')+' tarda demasiado. Revisa la pestaña Actions de tu repositorio.');
       return espera(6000).then(mira);
     });
   }
@@ -1113,7 +1116,7 @@ function pintarEstado(){
   var ests=c.pausado?['EN PAUSA','warn']:(u.ok===false?['CON ERROR','bad']:(e.actualizado&&Date.now()-e.actualizado<75*60000?['ACTIVO','']:['SIN CICLOS','warn']));
   $('estadoPill').innerHTML='<i></i>'+ests[0];$('estadoPill').className='pill live '+ests[1];
   $('ultCiclo').textContent=e.ciclo?('#'+e.ciclo+' · '+hace(e.actualizado)):'—';
-  $('proxCiclo').textContent=proximo();
+  $('proxCiclo').textContent=proximo();barraCiclo();
   $('libre').textContent=u.libre!=null?num(u.libre,2)+' '+(u.quote||''):'—';
   // Saldo real del exchange (solo lectura): también en simulación, para comprobar las claves.
   var R=u.real,sr=$('saldoReal'),exN=esc((u.exchange||S.exchange||'tu exchange').replace('_',' '));
@@ -1123,7 +1126,7 @@ function pintarEstado(){
     var otros=Object.keys(R.saldos||{}).filter(function(k){return k!==u.quote}).slice(0,4).map(function(k){return esc(k)+' '+num(R.saldos[k],4)}).join(' · ');
     sr.className='notice'+(R.perps_usdc&&!R.libre?' warn':'');
     sr.innerHTML='<b>Saldo real en '+exN+'</b>: '+num(R.libre,2)+' '+esc(u.quote||'')+' libres'+
-      (R.perps_usdc?'<br>'+num(R.perps_usdc,2)+' USDC en Perps: pásalos a Spot en Hyperliquid (Transfer → Perps a Spot) para que Kumo los use.':'')+
+      (R.perps_usdc&&R.libre<1?'<br>'+num(R.perps_usdc,2)+' USDC en Perps: pásalos a Spot en Hyperliquid (Transfer → Perps a Spot) para que Kumo los use.':'')+
       (otros?'<br><small>'+otros+'</small>':'')+
       (real?'':'<br><small>Estás en simulación: el bot opera con dinero virtual y este saldo no se toca hasta que actives Dinero real.</small>');
   }
@@ -1152,9 +1155,29 @@ function pintarEstado(){
 function filaOp(o){
   return '<div class="row"><span class="info"><b>'+esc(o.simbolo)+'</b> <span class="badge '+(o.accion==='COMPRAR'?'buy':'sell')+'">'+(o.accion==='COMPRAR'?'COMPRA':'VENTA')+'</span>'+(o.simulada?' <span class="badge off">SIM</span>':'')+'<small>'+esc(o.motivo||'')+(o.ts?' · '+hora(o.ts*1000):'')+'</small></span><span style="text-align:right"><b>'+num(o.total,2)+'</b><small>@ '+precio(o.precio)+(o.pnl!=null?' · <span class="'+clsPct(o.pnl)+'">'+pct(o.pnl)+'</span>':'')+'</small></span></div>';
 }
+// Barra del ciclo: en reposo muestra cuánto falta para el próximo ciclo
+// programado (minutos 7 y 37 UTC); con «Ciclo ahora» sigue los pasos en GitHub.
+var cicloVivo=null;
+function pintaBarraCiclo(p,txt,estado){
+  p=Math.max(0,Math.min(100,Math.round(p)));
+  $('cicloBarra').style.width=p+'%';$('cicloPct').textContent=p+'%';$('cicloProg').setAttribute('aria-valuenow',p);
+  $('cicloProg').className='prog'+(estado?' '+estado:'');$('cicloTxt').textContent=txt;
+}
+function barraCiclo(){
+  if(cicloVivo)return;
+  var e=datos.estado||{},c=e.config||{};
+  if(c.pausado){pintaBarraCiclo(0,'Bot en pausa: los ciclos analizan pero no operan.','err');return}
+  var seg=faltaCiclo(),atraso=e.actualizado&&Date.now()-e.actualizado>45*60000;
+  $('proxCiclo').textContent=reloj(seg);
+  pintaBarraCiclo((1800-seg)/1800*100,'Próximo ciclo en '+reloj(seg)+' (GitHub puede atrasarlo unos minutos)'+(atraso?' · va atrasado: el último ciclo fue '+hace(e.actualizado):''));
+}
+// Segundos que faltan para el próximo ciclo programado (minutos 7 y 37 UTC).
+function faltaCiclo(){var d=new Date(),t=(d.getUTCMinutes()*60+d.getUTCSeconds()-420+3600)%1800;return 1800-t}
+function reloj(seg){var m=Math.floor(seg/60),x=seg%60;return m+':'+(x<10?'0':'')+x}
+setInterval(function(){if(!document.hidden&&$('cicloProg')&&datos.estado)barraCiclo()},1000);
 function proximo(){
   var c=(datos.estado||{}).config||{};if(c.pausado)return 'En pausa';
-  var d=new Date(),m=d.getUTCMinutes(),obj=m<7?7:m<37?37:67,falta=obj-m;return '~'+falta+' min';
+  return reloj(faltaCiclo());
 }
 function dibujar(h){
   if(!h||h.length<2){$('chLinea').setAttribute('d','');$('chArea').setAttribute('d','');return}
@@ -1186,7 +1209,13 @@ $('cicloAhora').onclick=function(){
   if(S.demo){toast('En demo no hay nube real');return}
   if(!S.gh||!S.gh.token){toast('Necesitas el token de GitHub: Config → Cambiar claves',true);return}
   var b=$('cicloAhora');b.disabled=true;
-  lanzarWorkflow(S.gh.owner,S.gh.repo,'ciclo.yml',S.gh.rama||'main').then(function(){toast('Ciclo lanzado: resultados en 1-2 min');setTimeout(cargarEstado,90000)}).catch(function(e){toast(traduce(e),true)}).then(function(){setTimeout(function(){b.disabled=false},20000)});
+  var desde=Date.now(),txt=$('cicloTxt');cicloVivo=true;pintaBarraCiclo(3,'Lanzando ciclo…');
+  function avance(f){var p=5+f*90;$('cicloBarra').style.width=Math.round(p)+'%';$('cicloPct').textContent=Math.round(p)+'%';$('cicloProg').setAttribute('aria-valuenow',Math.round(p))}
+  lanzarWorkflow(S.gh.owner,S.gh.repo,'ciclo.yml',S.gh.rama||'main')
+    .then(function(){toast('Ciclo lanzado');return esperarRun(S.gh.owner,S.gh.repo,'ciclo.yml',desde,txt,avance,'Ciclo')})
+    .then(function(){return cargarEstado()}).then(function(){pintaBarraCiclo(100,'Ciclo terminado ✓ '+hora(Date.now()),'ok')})
+    .catch(function(e){pintaBarraCiclo(100,traduce(e),'err');toast(traduce(e),true)})
+    .then(function(){b.disabled=false;setTimeout(function(){cicloVivo=null;barraCiclo()},10000)});
 };
 
 // ---------------------------------------------------------------- Radar

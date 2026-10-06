@@ -118,6 +118,8 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
       if(p.includes('/actions/secrets/')&&m==='DELETE'){secretos[p.split('/').pop()]='<<borrado>>';return R(204,null)}
       if(p.endsWith('/dispatches')){despachos.push(p.split('/')[6]);return R(204,null)}
       if(p.endsWith('/instalar.yml/runs')){const enCurso=runsVistos++===0;return R(200,{workflow_runs:[{id:77,status:enCurso?'in_progress':'completed',conclusion:enCurso?null:'success',created_at:new Date().toISOString(),html_url:'https://github.com/x'}]})}
+      if(p.endsWith('/ciclo.yml/runs')){const enCurso=cicloVistos++===0;return R(200,{workflow_runs:[{id:78,status:enCurso?'in_progress':'completed',conclusion:enCurso?null:'success',created_at:new Date().toISOString(),html_url:'https://github.com/x'}]})}
+      if(p.endsWith('/actions/runs/78/jobs'))return R(200,{jobs:[{steps:[{name:'Preparar',status:'completed'},{name:'Ciclo de Kumo',status:'in_progress'},{name:'Fin',status:'queued'}]}]});
       if(p.endsWith('/actions/runs/77/jobs'))return R(200,{jobs:[{steps:[{name:'Revisar secretos',status:'completed'},{name:'Subdominio workers.dev',status:'completed'},{name:'Desplegar Worker',status:'in_progress'},{name:'Comprobar y guardar la dirección',status:'queued'}]}]});
       if(p.endsWith('/contents/kumo.json'))return R(200,{content:Buffer.from(JSON.stringify({url:appUrl})).toString('base64')});
     }
@@ -129,7 +131,7 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
     }
     return R(404,{message:'no mock '+url});
   };
-  const abiertos=[];let runsVistos=0,nubeNueva=false;
+  const abiertos=[];let runsVistos=0,cicloVistos=0,nubeNueva=false;
   const nativo=w=>({estado:()=>'{}',barras(){},abrirUrl(u){abiertos.push(u)},config(){},
     http(id,met,url,cab,cuerpo){const h=JSON.parse(cab);let st=200,dat={};
       if(url.includes('/accounts'))dat=h.Authorization==='Bearer cf-bueno'?{success:true,result:[{id:'acc123456789',name:'Cuenta de Amigo'}]}:{success:false,result:null};
@@ -208,6 +210,13 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
    K.datos.estado={...ea,actualizado:Date.now(),ultimo:{ok:false,exchange:'hyperliquid',errores:['ErrorExchange: x']}};K.pintarEstado();
    ok(!/antes de cambiar/.test(av.textContent),'error de un ciclo nuevo: sin esa nota');
    K.datos.estado=ea;K.pintarEstado();}
+  {const tx=d.getElementById('cicloTxt'),pc=d.getElementById('cicloPct');
+   ok(/Próximo ciclo en \d+:\d\d/.test(tx.textContent)&&/^\d+:\d\d$/.test(d.getElementById('proxCiclo').textContent)&&/^\d+%$/.test(pc.textContent),'barra del ciclo en reposo: '+tx.textContent+' '+pc.textContent);
+   const n=despachos.length;click(d,'#cicloAhora');
+   let vio='';for(let i=0;i<40&&!/terminado/.test(tx.textContent);i++){await espera(250);if(/Ciclo… en curso: Ciclo de Kumo \(2\/3\)/.test(tx.textContent))vio=pc.textContent}
+   ok(despachos[n]==='ciclo.yml','CICLO AHORA lanza ciclo.yml');
+   ok(vio==='35%','la barra sigue los pasos del ciclo en GitHub ('+vio+')');
+   ok(/Ciclo terminado/.test(tx.textContent)&&pc.textContent==='100%'&&d.getElementById('cicloProg').classList.contains('ok'),'ciclo terminado: barra al 100% ('+tx.textContent+')');}
   await espera(300);
   ok(!d.getElementById('updBanda').classList.contains('oculto')&&/v9\.9\.9/.test(d.getElementById('updBanda').textContent),'banda de nueva versión visible');
   ok(d.getElementById('modal').classList.contains('open')&&/v9\.9\.9/.test(d.getElementById('mTitulo').textContent)&&/Novedades de prueba/.test(d.getElementById('mExtra').textContent),'aviso de actualización al entrar a la app (no durante el asistente)');
