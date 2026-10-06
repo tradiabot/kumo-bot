@@ -791,7 +791,7 @@ html:not([data-simple]) .solo-simple{display:none!important}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.5.2';
+var APP_VERSION='1.5.3';
 // Versión mínima del código de la nube que esta app necesita (runner/version.txt).
 // Solo sube cuando cambian runner/ o worker/: si no, el semáforo marcaría «nube vieja» sin motivo.
 var NUBE_MIN='1.5.0';
@@ -1313,8 +1313,30 @@ function pintarPredicciones(u){
   $('predLista').innerHTML=P.map(function(p){var pr=p.precio!=null?Math.round(p.precio*100):null,si=/^S/i.test(p.lado_nombre||'');
     return '<div class="pred"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(p.pregunta)+'</b><span class="badge '+(si?'buy':'sell')+'">'+esc(String(p.lado_nombre||'').toUpperCase())+'</span></div>'+
       '<small>'+num(p.cantidad,2)+' × '+(p.precio!=null?num(p.precio,3):'—')+' = <b>'+(p.valor!=null?num(p.valor,2)+' '+esc(p.quote||''):'sin precio')+'</b> · si aciertas cobras '+num(p.pago_si_acierta,2)+' '+esc(p.quote||'')+(p.vence?' · '+venceEn(p.vence)+' ('+hora(p.vence)+')':'')+'</small>'+
-      (pr!=null?'<div class="prob" title="Probabilidad según el mercado"><i style="width:'+pr+'%"></i></div><small class="muted">El mercado le da '+pr+'% a «'+esc(p.lado_nombre)+'»</small>':'')+'</div>'}).join('');
+      (pr!=null?'<div class="prob" title="Probabilidad según el mercado"><i style="width:'+pr+'%"></i></div><small class="muted">El mercado le da '+pr+'% a «'+esc(p.lado_nombre)+'»</small>':'')+
+      (p.vence&&p.vence<Date.now()?'':'<button class="small secundario" data-pia="'+esc(p.coin)+'" style="margin-top:8px;width:100%">✨ ANALIZAR CON IA</button>')+
+      '<div data-pres="'+esc(p.coin)+'">'+(predIA[p.coin]?htmlPredIA(predIA[p.coin],p):'')+'</div></div>'}).join('');
 }
+// La IA analiza la posición y SUGIERE; Kumo no ejecuta nada en estos mercados.
+var predIA={};
+var SUG_CLS={'MANTENER':'wait','VENDER':'sell','COMPRAR MÁS':'buy'};
+function htmlPredIA(a,p){
+  var m=a.mercado||{},pm=m.prob_mercado_tu_lado_pct;
+  return '<div class="notice" style="margin-top:8px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>◎ La IA sugiere</b><span class="badge '+(SUG_CLS[a.sugerencia]||'wait')+'">'+esc(a.sugerencia)+' · '+(a.confianza|0)+'%</span></div>'+
+    (a.prob_estimada!=null&&pm!=null?'<small>Probabilidad de «'+esc(p.lado_nombre)+'»: IA <b>'+num(a.prob_estimada,0)+'%</b> vs mercado <b>'+num(pm,1)+'%</b></small>':'')+
+    (m.precio_actual?'<small>'+esc(m.subyacente)+' ahora '+precio(m.precio_actual)+' · objetivo '+precio(m.objetivo)+' ('+pct(m.distancia_al_objetivo_pct)+')'+(m.horas_para_vencer!=null?' · faltan '+num(m.horas_para_vencer,1)+' h':'')+'</small>':'')+
+    '<p style="margin:6px 0 0">'+esc(a.analisis)+'</p>'+((a.riesgos||[]).length?'<small class="muted">Riesgos: '+a.riesgos.map(esc).join(' · ')+'</small>':'')+
+    '<small class="muted" style="display:block;margin-top:6px">Es solo una sugerencia de '+esc(a.modelo||'la IA')+', no asesoría financiera. <b>Tú decides</b>: Kumo no compra ni vende predicciones; si quieres seguirla, hazlo en Hyperliquid.</small>'+
+    '<button class="small ghost" data-url="https://app.hyperliquid.xyz/" style="margin-top:6px;width:100%">ABRIR HYPERLIQUID</button></div>';
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-pia]');if(!b)return;var coin=b.getAttribute('data-pia');
+  var p=((((datos.estado||{}).ultimo)||{}).predicciones||[]).filter(function(x){return x.coin===coin})[0]||{};
+  var box=document.querySelector('[data-pres="'+coin+'"]');b.disabled=true;b.textContent='LA IA ESTÁ ANALIZANDO…';
+  api('/api/predicciones/analizar',{coin:coin}).then(function(a){predIA[coin]=a;box.innerHTML=htmlPredIA(a,p)})
+    .catch(function(er){box.innerHTML='<p class="notice warn" style="margin-top:8px">'+esc(er.status===404&&!(er.data&&er.data.error&&/ciclo/.test(er.data.error))?'Tu nube aún no analiza predicciones: actualiza tu nube (Config → Actualizar nube).':traduce(er))+'</p>'})
+    .then(function(){b.disabled=false;b.textContent='✨ VOLVER A ANALIZAR'});
+});
 // ---------------------------------------------------------------- Señales de la IA
 // Lo que la IA dijo en cada ciclo y qué pasó con cada orden. Se refresca cada
 // 30 s mientras la pestaña IA está abierta. Nubes viejas sin /api/senales:
@@ -2118,6 +2140,7 @@ var DEMO=(function(){
       ia:{modo:cfg.ia,proveedor:'kilo.ai',modelos:['kilo-auto/free','nvidia/nemotron-3-super-120b-a12b:free'],ultimas:[{ts:ahora-605000,ok:true,modelo:'nvidia/nemotron-3-super-120b-a12b:free',ms:1300},{ts:ahora-606000,ok:false,modelo:'kilo-auto/free',ms:400}]}};
     if(ruta==='/api/ia/probar')return cuerpo&&cuerpo.todos?{ok:true,proveedor:'kilo.ai',modelo:'nvidia/nemotron-3-super-120b-a12b:free',ms:1300,preferido_nuevo:'nvidia/nemotron-3-super-120b-a12b:free',pruebas:[{modelo:'kilo-auto/free',ok:false,ms:400,error:'kilo.ai HTTP 429 con kilo-auto/free'},{modelo:'nvidia/nemotron-3-super-120b-a12b:free',ok:true,ms:1300}]}
       :{ok:true,proveedor:'kilo.ai',modelo:'nvidia/nemotron-3-super-120b-a12b:free',ms:1300,pruebas:[{modelo:'nvidia/nemotron-3-super-120b-a12b:free',ok:true,ms:1300}]};
+    if(ruta==='/api/predicciones/analizar')return {coin:cuerpo.coin,modelo:'demo',sugerencia:'MANTENER',confianza:62,prob_estimada:58,analisis:'(Demo) BTC está apenas por debajo del objetivo y faltan 12 h: el resultado es casi una moneda al aire. Tu lado «No» cotiza cerca de su valor justo.',riesgos:['Un movimiento de 1% decide el resultado'],mercado:{subyacente:'BTC',precio_actual:85451,objetivo:85501,distancia_al_objetivo_pct:-0.06,horas_para_vencer:12,prob_mercado_tu_lado_pct:51},ts:Date.now()};
     if(ruta==='/api/ia/diagnosticar')return {modelo:'demo',resumen:'(Demo) El primer modelo gratuito estaba saturado (HTTP 429); ya quedó como principal uno que responde.',pasos:['No tienes que hacer nada más.'],arreglos:[]};
     if(ruta==='/api/avisos/probar'){feed.unshift({id:String(Date.now()),ts:Date.now(),kind:'prueba',title:'¡Kumo conectado! ☁️',body:'Prueba'});return {ok:true}}
     return {};

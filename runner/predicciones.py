@@ -97,5 +97,8 @@ def describir(preds, info):
             "pago_si_acierta": round(cant, 2),
             "vence": _vence_ms(c.get("expiry")) or _vence_ms(_campos((preguntas.get(oid) or {}).get("description")).get("resolutionDeadline")),
             "quote": o.get("quoteToken") or "USDC",
+            # Para que la IA compare el precio actual con el objetivo (mercados de precio).
+            "subyacente": c.get("underlying") if c.get("class") == "priceBinary" else None,
+            "objetivo": _num(c.get("targetPrice")) if c.get("class") == "priceBinary" else None,
         })
     return out

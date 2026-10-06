@@ -1,5 +1,6 @@
 <p align="center"><img src="docs/logo-512.png" width="140" alt="Kumo Bot"></p>
 <h1 align="center">Kumo Bot 雲</h1>
+<p align="center"><a href="README.en.md">English</a></p>
 <p align="center"><b>Bot de trading cripto que corre en <i>tu propia nube</i>, con tus reglas.</b><br>
 <a href="#-apoya-al-desarrollador">☕ Donar</a> · App Android · Cloudflare Workers · GitHub Actions · IA gratis (con o sin cuenta) · 100+ exchanges vía ccxt</p>
 
@@ -18,6 +19,8 @@ mantiene este repositorio.
 - **Órdenes con IA**: la IA propone órdenes y tú las apruebas, editas o cancelas (o la dejas ejecutar sola). También creas las tuyas con precio límite.
 - **Gráficas por activo**: precio con tu costo promedio, RSI y MACD en 1H, 4H y 1D, con velas de tu exchange.
 - **Semáforo en tiempo real**: nube, ciclos, IA y exchange; si algo falla te dice cómo arreglarlo y **«Buscar y corregir»** lo arregla solo cuando es seguro.
+- **Predicciones de Hyperliquid**: tus mercados de predicción con nombre, valor y vencimiento; la IA los analiza y te sugiere qué hacer (tú decides).
+- **Modo simple**: solo Panel, Cartera y Config para quien empieza.
 - **Historial y señales en vivo**: qué dijo la IA en cada ciclo, con qué modelo y cuánto tardó.
 - **App con 5 interfaces**: Pro Grafito y Pro Porcelana, Neón Noche y Neón Día (manga cyberpunk) o Clásica.
 

@@ -102,6 +102,10 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   click(d,'.nav [data-target="cartera"]');await espera(30);
   {const pl=d.getElementById('predLista').textContent;
    ok(!d.getElementById('predPanel').classList.contains('oculto')&&/¿BTC ≥ 85 501 al vencer\?/.test(pl)&&/NO/.test(pl)&&/2,55 USDT/.test(pl)&&/cobras 5 USDT/.test(pl)&&/le da 51%/.test(pl)&&/vence en 12 h/.test(pl),'Cartera: predicción con nombre, lado, valor, pago y vencimiento');}
+  click(d,'#predLista [data-pia="+90151"]');await espera(40);
+  {const res=d.querySelector('[data-pres="+90151"]').textContent;
+   ok(/La IA sugiere/.test(res)&&/MANTENER · 62%/.test(res)&&/IA 58% vs mercado 51%/.test(res)&&/Tú decides/.test(res)&&/objetivo 85\.?501/.test(res),'predicción: la IA analiza y sugiere, el usuario decide ('+res.slice(0,90)+')');
+   ok(/VOLVER A ANALIZAR/.test(d.querySelector('[data-pia="+90151"]').textContent),'se puede volver a analizar');}
   ok(d.querySelectorAll('#activos [data-graf]').length===3&&!d.querySelector('#activos [data-graf="USDT"]'),'activos tocables (sin la moneda base)');
   click(d,'#activos [data-graf="BTC"] .info');await espera(40);
   const G=()=>d.getElementById('grafCuerpo');

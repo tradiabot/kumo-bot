@@ -3,6 +3,17 @@
 Para actualizar: instala la APK nueva encima de la anterior (se conservan tus datos) y en la app
 toca **Config → Actualizar nube** para que tu nube reciba el código nuevo.
 
+## v1.5.3 — La IA analiza tus predicciones
+
+- Cada predicción de Cartera tiene **✨ Analizar con IA**: la IA mira la pregunta, el precio actual
+  frente al objetivo, el tiempo que falta, el movimiento de las últimas 24 h y la probabilidad del
+  mercado, y **sugiere MANTENER, VENDER o COMPRAR MÁS** con su propia probabilidad y los riesgos.
+- **Tú decides**: Kumo no compra ni vende predicciones; si quieres seguir la sugerencia, la app
+  abre Hyperliquid. Cada análisis queda en el Historial.
+- Nube: `POST /api/predicciones/analizar` (datos públicos de Hyperliquid + tu IA). Necesita
+  **actualizar la nube**.
+- README en inglés (`README.en.md`).
+
 ## v1.5.2 — Mercados de predicción de Hyperliquid
 
 - Las posiciones en **mercados de predicción de Hyperliquid (HIP-4)**, que antes aparecían como
