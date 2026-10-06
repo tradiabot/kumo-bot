@@ -37,11 +37,11 @@ html[data-tema="clasica"] h1,html[data-tema="clasica"] h2{font-family:inherit}
 h1{font-size:20px}h2{font-size:19px}h3{font-size:14px}
 small{color:var(--muted);font-size:11px}
 a{color:var(--acento2)}
-button,input,select{font:inherit;color:var(--text)}
+button,input,select,textarea{font:inherit;color:var(--text)}
 button{border:2px solid var(--line);background:var(--panel2);padding:10px 12px;border-radius:4px;cursor:pointer;font-weight:700}
 button:active{transform:translate(2px,2px)}
 button:disabled{opacity:.45}
-input,select{width:100%;background:var(--bg);border:2px solid var(--line);border-radius:4px;padding:10px}
+input,select,textarea{width:100%;background:var(--bg);border:2px solid var(--line);border-radius:4px;padding:10px}textarea{resize:vertical}
 input:focus,select:focus{outline:2px solid var(--acento2);outline-offset:1px}
 .primary{background:var(--acento);border-color:var(--tinta);color:var(--sobre-acento);text-transform:uppercase;letter-spacing:.04em}
 html[data-estilo="manga"] .primary{box-shadow:3px 3px 0 var(--acento2)}
@@ -66,7 +66,7 @@ html[data-tema="noche"] .logo-txt{text-shadow:2px 0 var(--acento),-2px 0 var(--a
 .screen.active{display:block}
 .nav{position:fixed;z-index:10;bottom:0;left:0;right:0;background:var(--bg);border-top:2px solid var(--line);display:flex;justify-content:center;padding:6px 4px max(6px,env(safe-area-inset-bottom))}
 .nav button{flex:1;max-width:96px;border:0;background:transparent;color:var(--muted);padding:6px 2px;font-size:18px;line-height:1;border-radius:4px}
-.nav button small{display:block;font-size:10px;margin-top:4px;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.nav button small{display:block;font-size:9.5px;margin-top:4px;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
 .nav button.active{color:var(--acento)}
 html[data-estilo="manga"] .nav button.active{background:var(--acento);color:var(--sobre-acento)}
 .section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:12px;flex-wrap:wrap}
@@ -251,7 +251,7 @@ html[data-estilo="pro"] h1{font-size:22px}html[data-estilo="pro"] h2{font-size:2
 html[data-estilo="pro"] a{color:var(--acento)}
 html[data-estilo="pro"] button{border:1px solid var(--line);border-radius:10px;font-weight:600;transition:background .15s,border-color .15s,transform .1s}
 html[data-estilo="pro"] button:active{transform:scale(.98)}
-html[data-estilo="pro"] input,html[data-estilo="pro"] select{border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+html[data-estilo="pro"] input,html[data-estilo="pro"] select,html[data-estilo="pro"] textarea{border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
 html[data-estilo="pro"] input:focus,html[data-estilo="pro"] select:focus{outline:0;border-color:var(--acento);box-shadow:0 0 0 3px var(--suave)}
 html[data-estilo="pro"] .primary{background:linear-gradient(135deg,var(--acento),#9b5cff);border-color:transparent;color:var(--sobre-acento);letter-spacing:.03em;box-shadow:0 6px 18px -8px var(--acento)}
 html[data-estilo="pro"] .secundario{border-color:var(--line);color:var(--acento2);background:var(--suave2)}
@@ -559,6 +559,49 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
   <div class="panel"><div class="panel-title"><span>Bitácora de avisos</span><button id="bitRefresh" class="small">ACTUALIZAR</button></div><div id="bitacora"><p class="empty">—</p></div></div>
 </section>
 
+<section id="ordenes" class="screen" aria-label="Órdenes">
+  <div class="section-head"><div><span class="eyebrow"><span class="kata">注文</span>ÓRDENES</span><h2>Órdenes</h2></div><span id="ordModo" class="pill">—</span></div>
+  <div class="panel">
+    <div class="panel-title"><span>¿Quién crea las órdenes?</span></div>
+    <div class="chips" id="ordModoChips"><button data-m="proponer">🤖 IA PROPONE · TÚ APRUEBAS</button><button data-m="auto">⚡ IA EJECUTA SOLA</button><button data-m="off">✋ SOLO YO</button></div>
+    <p id="ordModoTxt" class="muted" style="margin:8px 0 0;font-size:12px"></p>
+  </div>
+  <div class="panel">
+    <div class="panel-title"><span>✨ Pedir a la IA</span></div>
+    <div class="form"><textarea id="ordIAtxt" rows="2" maxlength="400" placeholder="Ej.: compra 12 USDC de HYPE si baja de 40"></textarea>
+    <button id="ordIApedir" class="primary">CREAR ORDEN CON IA</button></div>
+    <small class="muted">La IA prepara la orden y queda como <b>propuesta</b>: no se ejecuta hasta que la apruebes.</small>
+  </div>
+  <details class="panel" id="ordNuevaBox"><summary class="panel-title" style="cursor:pointer"><span>＋ Nueva orden manual</span></summary>
+    <div class="form" style="margin-top:8px">
+      <div class="grid two"><label>Moneda<input id="onSym" maxlength="12" placeholder="HYPE" autocapitalize="characters"></label>
+      <label>Acción<select id="onAcc"><option value="COMPRAR">COMPRAR</option><option value="VENDER">VENDER</option></select></label></div>
+      <div class="grid two"><label><span id="onCantL">Monto</span><input id="onCant" type="number" inputmode="decimal" min="1" step="any"></label>
+      <label>Precio límite <small>(vacío = a mercado)</small><input id="onLim" type="number" inputmode="decimal" min="0" step="any"></label></div>
+      <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input id="onPerd" type="checkbox" style="width:auto"> Vender aunque sea con pérdida</label>
+      <button id="onCrear" class="primary">CREAR ORDEN</button>
+    </div>
+  </details>
+  <div class="panel"><div class="panel-title"><span>Pendientes</span><span id="ordPendN" class="pill">0</span></div><div id="ordPend"><p class="empty">—</p></div></div>
+  <div class="panel"><div class="panel-title"><span>Recientes</span></div><div id="ordHechas"><p class="empty">—</p></div></div>
+</section>
+
+<section id="historial" class="screen" aria-label="Historial">
+  <div class="section-head"><div><span class="eyebrow"><span class="kata">履歴</span>BITÁCORA</span><h2>Historial</h2></div><button id="histRefresh" class="small">ACTUALIZAR</button></div>
+  <div class="panel">
+    <div class="panel-title"><span>¿Está funcionando la IA?</span><span id="saludPill" class="pill">—</span></div>
+    <div class="grid two">
+      <div class="metric"><span>Última respuesta</span><b id="saludOk">—</b></div>
+      <div class="metric"><span>Último fallo</span><b id="saludErr">—</b></div>
+      <div class="metric"><span>Respuestas OK (24 h)</span><b id="saludPct">—</b></div>
+      <div class="metric"><span>Tiempo medio</span><b id="saludMs">—</b></div>
+    </div>
+    <small id="saludTxt" class="muted"></small>
+  </div>
+  <div class="chips" id="histFiltro" style="margin:0 0 10px"><button data-h="todo" class="active">TODO</button><button data-h="ia">IA</button><button data-h="orden">ÓRDENES</button><button data-h="ciclo">CICLOS</button><button data-h="error">ERRORES</button></div>
+  <div class="panel"><div id="histLista"><p class="empty">—</p></div></div>
+</section>
+
 <section id="cartera" class="screen" aria-label="Cartera">
   <div class="section-head"><div><span class="eyebrow"><span class="kata">財布</span>PORTAFOLIO</span><h2>Cartera</h2></div></div>
   <div class="panel"><div class="panel-title"><span>Activos · barra = peso, marca = objetivo</span></div><div id="activos"><p class="empty">—</p></div></div>
@@ -640,10 +683,12 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 
 <nav class="nav" aria-label="Secciones">
   <button class="active" data-target="panel">⌂<small>Panel</small></button>
+  <button data-target="ordenes">⇅<small>Órdenes</small></button>
   <button data-target="radar">⌖<small>Radar</small></button>
   <button data-target="ia">◎<small>IA</small></button>
   <button data-target="cartera">◈<small>Cartera</small></button>
   <button data-target="estrategia">◇<small>Estrategia</small></button>
+  <button data-target="historial">☰<small>Historial</small></button>
   <button data-target="config">⚙<small>Config</small></button>
 </nav>
 
@@ -657,7 +702,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.3.7';
+var APP_VERSION='1.4.0';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -731,7 +776,7 @@ function irA(id){
   document.querySelectorAll('.nav button').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-target')===id)});
   window.scrollTo(0,0);
   vista=id;
-  if(id==='radar')cargarRadar();if(id==='ia'){cargarBitacora();cargarSenales()}if(id==='cartera')cargarOps();if(id==='estrategia')pintarEstrategia();if(id==='config')pintarConfig();
+  if(id==='radar')cargarRadar();if(id==='ia'){cargarBitacora();cargarSenales()}if(id==='ordenes')cargarOrdenes();if(id==='historial')cargarHistorial();if(id==='cartera')cargarOps();if(id==='estrategia')pintarEstrategia();if(id==='config')pintarConfig();
 }
 document.querySelectorAll('.nav button').forEach(function(b){b.onclick=function(){irA(b.getAttribute('data-target'))}});
 
@@ -1085,7 +1130,9 @@ var TUTO=[
  '<span class="tuto-num">6</span><span class="eyebrow"><span class="kata">毎日</span>DÍA A DÍA</span><h2>Cómo usar la app</h2><ul>'+
  '<li><b>⌂ Panel</b>: valor, último ciclo, pausar o lanzar un ciclo ya.</li>'+
  '<li><b>⌖ Radar</b>: monedas con más volumen, análisis con IA e «Incluir».</li>'+
+ '<li><b>⇅ Órdenes</b>: las que propone la IA y las tuyas; apruébalas, edítalas tú o pídele cambios a la IA.</li>'+
  '<li><b>◎ IA</b>: qué opinó la IA y la bitácora de avisos.</li>'+
+ '<li><b>☰ Historial</b>: cada ciclo, cada llamada a la IA y cada orden, para ver que todo funciona.</li>'+
  '<li><b>◈ Cartera</b> y <b>◇ Estrategia</b>: tus activos, tu reparto y tus reglas.</li>'+
  '<li><b>⚙ Config</b>: tema, dinero real, notificaciones y cambiar claves.</li></ul>'+
  '<label class="check" style="margin-top:12px;font-weight:700"><input type="checkbox" id="tutoOk"> Entendí: Kumo usa solo mis cuentas y empieza en simulación.</label>'
@@ -1200,6 +1247,111 @@ function pintarSenales(){
   }).join('')||'<p class="empty">El historial se llena ciclo a ciclo.</p>';
 }
 setInterval(function(){if(!document.hidden&&vista==='ia'&&datos.estado)cargarSenales()},30000);
+
+// ---------------------------------------------------------------- Órdenes
+// Cola de órdenes de la nube: las propone la IA o las crea el usuario; se
+// editan a mano o pidiéndoselo a la IA; el runner ejecuta las aprobadas.
+var ORD_EST={propuesta:['PROPUESTA','wait'],aprobada:['APROBADA · EN COLA','buy'],ejecutada:['EJECUTADA ✓','buy'],cancelada:['CANCELADA','off'],caducada:['CADUCADA','off'],error:['ERROR','sell']};
+var ORD_MODO={proponer:'La IA crea órdenes cuando su señal es fuerte (confianza ≥ tu mínimo) y esperan tu aprobación.',auto:'La IA crea y ejecuta órdenes sola, dentro de tus montos mínimo y máximo. Tú puedes editarlas o cancelarlas mientras estén en cola.',off:'La IA no crea órdenes. Solo se ejecutan las que tú crees (y las de tu estrategia automática).'};
+function cargarOrdenes(){
+  return api('/api/ordenes').then(function(d){datos.ordenes=d.ordenes||[];pintarOrdenes()}).catch(function(e){$('ordPend').innerHTML='<p class="empty">'+esc(e.status===404?'Tu nube aún no tiene órdenes: actualiza tu nube (Config).':traduce(e))+'</p>'});
+}
+function descOrden(o){
+  var q=esc(o.quote||(datos.config||{}).quote||'');
+  return (o.accion==='COMPRAR'?num(o.monto,2)+' '+q:o.pct+'% de tu '+esc(o.simbolo))+(o.limite?' · si '+(o.accion==='COMPRAR'?'≤ ':'≥ ')+precio(o.limite):' · a mercado');
+}
+function tarjetaOrden(o){
+  var e=ORD_EST[o.estado]||[esc(o.estado),'off'],pend=o.estado==='propuesta'||o.estado==='aprobada',id=esc(o.id);
+  var h='<div class="card" data-oid="'+id+'"><div class="card-head"><span><b>'+esc(o.simbolo)+'</b> <span class="badge '+(o.accion==='COMPRAR'?'buy':'sell')+'">'+esc(o.accion)+'</span> <span class="badge off">'+(o.origen==='ia'?'🤖 IA':'👤 TÚ')+'</span></span><span class="badge '+e[1]+'">'+e[0]+'</span></div>'+
+    '<div style="margin-top:6px"><b>'+descOrden(o)+'</b>'+(o.permitir_perdida?' <small class="warn-text">· puede vender con pérdida</small>':'')+'</div>'+
+    (o.razon?'<small style="display:block">'+esc(o.razon)+'</small>':'')+
+    (o.ia&&o.ia.confianza!=null?'<small style="display:block">IA: '+esc(o.ia.accion)+' '+o.ia.confianza+'%</small>':'')+
+    (o.aviso?'<small class="warn-text" style="display:block">⚠ '+esc(o.aviso)+'</small>':'')+
+    (o.nota&&pend?'<small class="warn-text" style="display:block">⏳ '+esc(o.nota)+'</small>':'')+
+    (o.error?'<small class="down" style="display:block">✖ '+esc(o.error)+'</small>':'')+
+    (o.resultado?'<small class="up" style="display:block">✔ '+num(o.resultado.total,2)+' a '+precio(o.resultado.precio)+(o.resultado.ts?' · '+hora(o.resultado.ts):'')+'</small>':'')+
+    '<small class="muted" style="display:block">'+hora(o.ts)+(pend&&o.vence?' · caduca '+hora(o.vence):'')+'</small>'+
+    ((o.historia||[]).length?'<details><summary class="muted" style="font-size:11px;cursor:pointer">Cambios ('+o.historia.length+')</summary>'+o.historia.slice().reverse().map(function(x){return '<small style="display:block">'+(x.quien==='ia'?'🤖':x.quien==='usuario'?'👤':'☁️')+' '+hora(x.ts)+' · '+esc(x.texto)+'</small>'}).join('')+'</details>':'');
+  if(pend){
+    h+='<div class="grid two" style="margin-top:9px">'+(o.estado==='propuesta'?'<button class="small primary" data-oa="aprobar">✔ APROBAR</button>':'<button class="small" disabled>EN COLA</button>')+'<button class="small danger" data-oa="cancelar">✖ CANCELAR</button><button class="small" data-oa="editar">✎ EDITAR</button><button class="small" data-oa="conia">✨ EDITAR CON IA</button></div>'+
+      '<div class="form oculto" data-of="editar" style="margin-top:8px"><div class="grid two"><label>'+(o.accion==='COMPRAR'?'Monto':'% a vender')+'<input data-ec="cant" type="number" step="any" value="'+(o.accion==='COMPRAR'?o.monto:o.pct)+'"></label><label>Precio límite<input data-ec="lim" type="number" step="any" value="'+(o.limite||'')+'" placeholder="a mercado"></label></div>'+
+      (o.accion==='VENDER'?'<label style="display:flex;gap:8px;align-items:center;font-weight:400"><input data-ec="perd" type="checkbox" style="width:auto"'+(o.permitir_perdida?' checked':'')+'> Vender aunque sea con pérdida</label>':'')+
+      '<button class="small primary" data-oa="guardar">GUARDAR CAMBIOS</button></div>'+
+      '<div class="form oculto" data-of="conia" style="margin-top:8px"><input data-ec="ins" maxlength="400" placeholder="Ej.: bájala a 11 USDC y pon límite 2% abajo"><button class="small primary" data-oa="enviaria">ENVIAR A LA IA</button></div>';
+  }
+  return h+'</div>';
+}
+function pintarOrdenes(){
+  var l=datos.ordenes||[],c=datos.config||{},m=c.ordenes_ia||'proponer';
+  document.querySelectorAll('#ordModoChips button').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-m')===m)});
+  $('ordModoTxt').textContent=ORD_MODO[m]+(c.ia==='off'&&m!=='off'?' (Ahora la IA está apagada en Estrategia: no creará órdenes.)':'');
+  $('ordModo').textContent={proponer:'IA PROPONE',auto:'IA AUTOMÁTICA',off:'SOLO TÚ'}[m];$('ordModo').className='pill '+(m==='auto'?'bad':'');
+  var pend=l.filter(function(o){return o.estado==='propuesta'||o.estado==='aprobada'}),hechas=l.filter(function(o){return !(o.estado==='propuesta'||o.estado==='aprobada')});
+  $('ordPendN').textContent=pend.length;
+  $('ordPend').innerHTML=pend.map(tarjetaOrden).join('')||'<p class="empty">No hay órdenes pendientes. La IA propone en cada ciclo si ve una señal fuerte; o crea una tú.</p>';
+  $('ordHechas').innerHTML=hechas.slice(0,30).map(tarjetaOrden).join('')||'<p class="empty">Aún no hay órdenes cerradas.</p>';
+}
+function accionOrden(cuerpo,ok){
+  return api('/api/ordenes',cuerpo).then(function(r){toast(ok);return cargarOrdenes().then(function(){return r})}).catch(function(e){toast(traduce(e),true)});
+}
+$('ordModoChips').onclick=function(e){
+  var b=e.target.closest('button');if(!b)return;var m=b.getAttribute('data-m');
+  var guarda=function(){api('/api/config',{ordenes_ia:m}).then(function(r){datos.config=r.config||datos.config;if(datos.estado)datos.estado.config=datos.config;pintarOrdenes();toast('Guardado')}).catch(function(e){toast(traduce(e),true)})};
+  if(m==='auto')confirmar('La IA ejecutará sola','La IA comprará y venderá sin pedirte permiso cuando su señal sea fuerte, con montos entre tu mínimo y máximo.'+((datos.config||{}).modo==='real'?' ⚠ Estás en DINERO REAL.':''),'ACTIVAR').then(function(ok){if(ok)guarda()});else guarda();
+};
+$('onAcc').onchange=function(){$('onCantL').textContent=this.value==='COMPRAR'?'Monto ('+((datos.config||{}).quote||'')+')':'% a vender';$('onCant').value=this.value==='VENDER'?100:''};
+$('onCrear').onclick=function(){
+  var acc=$('onAcc').value,o={simbolo:$('onSym').value.trim().toUpperCase(),accion:acc,limite:$('onLim').value||null,permitir_perdida:$('onPerd').checked};
+  if(acc==='COMPRAR')o.monto=Number($('onCant').value);else o.pct=Number($('onCant').value||100);
+  if(!o.simbolo){toast('Escribe la moneda',true);return}
+  accionOrden({accion:'crear',orden:o},'Orden creada: se ejecuta en el próximo ciclo').then(function(r){if(r){$('onSym').value=$('onCant').value=$('onLim').value='';$('ordNuevaBox').open=false}});
+};
+$('ordIApedir').onclick=function(){
+  var t=$('ordIAtxt').value.trim();if(!t){toast('Escribe qué orden quieres',true);return}
+  var b=this;b.disabled=true;b.textContent='LA IA ESTÁ PENSANDO…';
+  accionOrden({accion:'ia',instruccion:t},'La IA creó la orden: revísala y apruébala').then(function(r){if(r)$('ordIAtxt').value=''}).then(function(){b.disabled=false;b.textContent='CREAR ORDEN CON IA'});
+};
+$('ordenes').addEventListener('click',function(e){
+  var b=e.target.closest('[data-oa]');if(!b)return;var card=b.closest('[data-oid]'),id=card.getAttribute('data-oid'),a=b.getAttribute('data-oa');
+  var o=(datos.ordenes||[]).filter(function(x){return x.id===id})[0]||{};
+  if(a==='editar'||a==='conia'){card.querySelector('[data-of="'+a+'"]').classList.toggle('oculto');return}
+  if(a==='aprobar')confirmar('Aprobar orden',(o.accion==='COMPRAR'?'Compra ':'Venta ')+o.simbolo+' · '+descOrden(o).replace(/<[^>]+>/g,'')+'. Se ejecuta en el próximo ciclo'+((datos.config||{}).modo==='real'?' con DINERO REAL.':' (simulación).'),'APROBAR').then(function(ok){if(ok)accionOrden({accion:'aprobar',id:id},'Aprobada')});
+  if(a==='cancelar')accionOrden({accion:'cancelar',id:id},'Orden cancelada');
+  if(a==='guardar'){
+    var v=function(k){return card.querySelector('[data-ec="'+k+'"]')},c={limite:v('lim').value||null};
+    if(o.accion==='COMPRAR')c.monto=Number(v('cant').value);else{c.pct=Number(v('cant').value);if(v('perd'))c.permitir_perdida=v('perd').checked}
+    accionOrden({accion:'editar',id:id,cambios:c},'Orden editada');
+  }
+  if(a==='enviaria'){
+    var t=card.querySelector('[data-ec="ins"]').value.trim();if(!t){toast('Escribe el cambio que quieres',true);return}
+    b.disabled=true;b.textContent='LA IA ESTÁ PENSANDO…';
+    accionOrden({accion:'ia',id:id,instruccion:t},'La IA editó la orden: revísala y apruébala').then(function(){b.disabled=false;b.textContent='ENVIAR A LA IA'});
+  }
+});
+setInterval(function(){if(!document.hidden&&vista==='ordenes'&&datos.estado&&!document.querySelector('#ordenes [data-of]:not(.oculto)'))cargarOrdenes()},30000);
+
+// ---------------------------------------------------------------- Historial
+var histF='todo';
+function cargarHistorial(){
+  return api('/api/historial').then(function(d){datos.hist=d.items||[];pintarHistorial()}).catch(function(e){$('histLista').innerHTML='<p class="empty">'+esc(e.status===404?'Tu nube aún no guarda historial: actualiza tu nube (Config).':traduce(e))+'</p>'});
+}
+function pintarHistorial(){
+  var l=datos.hist||[],ia=l.filter(function(x){return x.tipo==='ia'&&!/no hubo nada/.test(x.texto)}),dia=Date.now()-86400000;
+  var ok=ia.filter(function(x){return x.ok})[0],err=ia.filter(function(x){return !x.ok})[0],d24=ia.filter(function(x){return x.ts>dia});
+  var bien=d24.filter(function(x){return x.ok}),ms=bien.filter(function(x){return x.ms}).map(function(x){return x.ms});
+  $('saludOk').textContent=ok?hace(ok.ts):'nunca';$('saludErr').textContent=err?hace(err.ts):'ninguno';
+  $('saludPct').textContent=d24.length?Math.round(bien.length/d24.length*100)+'% ('+bien.length+'/'+d24.length+')':'—';
+  $('saludMs').textContent=ms.length?(ms.reduce(function(a,b){return a+b},0)/ms.length/1000).toFixed(1)+' s':'—';
+  var vivo=ok&&(!err||ok.ts>=err.ts),pill=!ia.length?['SIN DATOS','warn']:vivo&&ok.ts>Date.now()-75*60000?['FUNCIONA','']:vivo?['SIN USO RECIENTE','warn']:['FALLANDO','bad'];
+  $('saludPill').innerHTML='<i></i>'+pill[0];$('saludPill').className='pill live '+pill[1];
+  $('saludTxt').textContent=ok?'Última respuesta: '+(ok.modelo||'')+' · '+ok.texto:(err?'Último fallo: '+err.texto:'Aún no hay llamadas a la IA registradas: aparecen en el próximo ciclo.');
+  var ic={ia:'🤖',orden:'⇅',ciclo:'☁️',error:'⚠'};
+  var f=l.filter(function(x){return histF==='todo'||x.tipo===histF||(histF==='error'&&x.ok===false)});
+  $('histLista').innerHTML=f.slice(0,150).map(function(x){return '<div class="row"><span class="info"><small style="color:var(--text)">'+(ic[x.tipo]||'•')+' <span class="'+(x.ok===false?'down':'')+'">'+esc(x.texto)+'</span></small><small>'+hora(x.ts)+' · '+hace(x.ts)+'</small></span></div>'}).join('')||'<p class="empty">Nada por aquí todavía.</p>';
+}
+$('histFiltro').onclick=function(e){var b=e.target.closest('button');if(!b)return;histF=b.getAttribute('data-h');this.querySelectorAll('button').forEach(function(x){x.classList.toggle('active',x===b)});pintarHistorial()};
+$('histRefresh').onclick=cargarHistorial;
+setInterval(function(){if(!document.hidden&&vista==='historial'&&datos.estado)cargarHistorial()},30000);
 
 function filaOp(o){
   return '<div class="row"><span class="info"><b>'+esc(o.simbolo)+'</b> <span class="badge '+(o.accion==='COMPRAR'?'buy':'sell')+'">'+(o.accion==='COMPRAR'?'COMPRA':'VENTA')+'</span>'+(o.simulada?' <span class="badge off">SIM</span>':'')+'<small>'+esc(o.motivo||'')+(o.ts?' · '+hora(o.ts*1000):'')+'</small></span><span style="text-align:right"><b>'+num(o.total,2)+'</b><small>@ '+precio(o.precio)+(o.pnl!=null?' · <span class="'+clsPct(o.pnl)+'">'+pct(o.pnl)+'</span>':'')+'</small></span></div>';
@@ -1502,11 +1654,31 @@ var DEMO=(function(){
   var activos=[{simbolo:'USDT',cantidad:312.4,precio:1,valor:312.4,peso:30.2},{simbolo:'BTC',cantidad:0.00492,precio:84760,valor:417.0,peso:40.3,costo:82110,pnl:3.23,objetivo:40},{simbolo:'ETH',cantidad:0.0921,precio:2686,valor:247.4,peso:23.9,costo:2702,pnl:-0.59,objetivo:25},{simbolo:'SOL',cantidad:0.41,precio:141.3,valor:57.9,peso:5.6,costo:136.2,pnl:3.74,objetivo:10}];
   var ops=[{ts:ahora/1000-1800,simbolo:'SOL',accion:'COMPRAR',cantidad:0.17,precio:139.9,total:24,motivo:'bajo su objetivo (3.1% de 10%) y RSI 33',simulada:true},{ts:ahora/1000-86400,simbolo:'BTC',accion:'VENDER',cantidad:0.0003,precio:85400,total:25.6,motivo:'sobre su objetivo, ganancia 4.0%',simulada:true,pnl:4.01}];
   var radar=[['BTC',84760,0.3,2.7e9,58,'alcista',1],['ETH',2686,-1.2,1.1e9,44,'neutral',1],['SOL',141.3,2.4,4.1e8,36,'alcista',1],['XRP',0.61,-0.8,3.2e8,41,'bajista',0],['SUI',1.92,5.6,2.1e8,63,'alcista',0],['PEPE',0.0000091,-3.4,1.8e8,29,'bajista',0],['LINK',13.8,1.1,9.4e7,52,'neutral',0],['DOGE',0.131,0.4,8.8e7,47,'neutral',0]].map(function(r){return {simbolo:r[0],precio:r[1],cambio_24h:r[2],volumen:r[3],rsi:r[4],tendencia:r[5],en_cartera:!!r[6]}});
+  var dOrd=[{id:'d1',ts:ahora-607000,origen:'ia',estado:'propuesta',simbolo:'SOL',accion:'COMPRAR',monto:18,quote:'USDT',limite:null,razon:'Rebote desde soporte con RSI bajo.',confianza:74,ia:{accion:'COMPRAR',confianza:74,razon:'Rebote desde soporte con RSI bajo.'},vence:ahora+80000000,historia:[{ts:ahora-607000,quien:'ia',texto:'Propuesta con 74% de confianza'}]},
+    {id:'d2',ts:ahora-3600000,origen:'usuario',estado:'aprobada',simbolo:'ETH',accion:'COMPRAR',monto:15,quote:'USDT',limite:2600,nota:'Esperando precio ≤ 2600 (ahora 2686)',vence:ahora+50000000,historia:[{ts:ahora-3600000,quien:'usuario',texto:'Creada'}]},
+    {id:'d3',ts:ahora-86400000,origen:'ia',estado:'ejecutada',simbolo:'BTC',accion:'VENDER',pct:50,quote:'USDT',razon:'Sobre su objetivo con ganancia.',resultado:{precio:85400,total:25.6,ts:ahora-86000000},historia:[]}];
   var feed=[{id:'1',ts:ahora-1800000,kind:'operacion',title:'🧪 Compra SOL',body:'24.00 USDT a 139.9 · bajo su objetivo y RSI 33'},{id:'2',ts:ahora-86400000,kind:'operacion',title:'🧪 Venta BTC',body:'25.60 USDT a 85400 · ganancia 4.0%'}];
   function estado(){return {version:'1.0.0',config:cfg,ciclo:58,actualizado:ahora-600000,historial:h,costos:{BTC:{costo:82110},ETH:{costo:2702,estimado:true},SOL:{costo:136.2}},ultimo:{ok:true,exchange:'kraken',modo:cfg.modo,quote:'USDT',total:1034.7,libre:312.4,activos:activos,propuestas:[{simbolo:'SOL',accion:'COMPRAR',monto:24,motivo:'bajo su objetivo (5.6% de 10%) y RSI 33'}],bloqueadas:[],ejecutadas:[ops[0]],notas:['ETH: vendería, pero no hay ganancia suficiente (-0.6%)'],errores:[],ia:{modelo:'qwen/qwen3.8-27b',modo:'veto',opiniones:{SOL:{accion:'COMPRAR',confianza:68,razon:'Rebote desde soporte con RSI bajo y volumen estable.'}}}}}}
   return {api:function(ruta,cuerpo){
     if(ruta==='/api/estado')return estado();
     if(ruta==='/api/operaciones')return {operaciones:ops};
+    if(ruta==='/api/historial')return {items:[
+      {ts:ahora-600000,tipo:'ciclo',ok:true,texto:'Ciclo #58 OK · kraken · simulacion · 1 operación · 0 errores · 21 s'},
+      {ts:ahora-605000,tipo:'ia',ok:true,ms:1300,modelo:'nvidia/nemotron-3-super-120b-a12b:free',texto:'IA Kilo respondió con nvidia/nemotron-3-super-120b-a12b:free en 1.3 s'},
+      {ts:ahora-606000,tipo:'ia',ok:false,ms:400,texto:'IA Kilo falló con kilo-auto/free: HTTP 429'},
+      {ts:ahora-607000,tipo:'orden',ok:true,texto:'IA propuso: Compra SOL 18 USDT'},
+      {ts:ahora-2400000,tipo:'ciclo',ok:true,texto:'Ciclo #57 OK · kraken · simulacion · 0 operaciones · 1 error · 19 s'},
+      {ts:ahora-2400000,tipo:'error',ok:false,texto:'Radar: tiempo de espera agotado'}]};
+    if(ruta==='/api/ordenes'){
+      if(!cuerpo)return {ordenes:dOrd,modo:cfg.ordenes_ia};
+      var o=dOrd.filter(function(x){return x.id===cuerpo.id})[0],t=Date.now();
+      if(cuerpo.accion==='crear'){o=Object.assign({id:'d'+t,ts:t,origen:'usuario',estado:'aprobada',quote:cfg.quote,vence:t+864e5,historia:[{ts:t,quien:'usuario',texto:'Creada'}]},cuerpo.orden);o.simbolo=String(o.simbolo).toUpperCase();dOrd.unshift(o)}
+      else if(cuerpo.accion==='ia'){if(!o){o={id:'d'+t,ts:t,origen:'ia',quote:cfg.quote,vence:t+864e5,historia:[],simbolo:'SOL',accion:'COMPRAR',monto:12};dOrd.unshift(o)}else o.monto=Math.max(1,(o.monto||12)-2);o.estado='propuesta';o.razon='(Demo) '+cuerpo.instruccion;o.historia.push({ts:t,quien:'ia',texto:'(Demo) La IA aplicó: '+cuerpo.instruccion})}
+      else if(o&&cuerpo.accion==='editar'){Object.assign(o,cuerpo.cambios);o.historia.push({ts:t,quien:'usuario',texto:'Editada'})}
+      else if(o&&cuerpo.accion==='aprobar'){o.estado='aprobada';o.historia.push({ts:t,quien:'usuario',texto:'Aprobada'})}
+      else if(o&&cuerpo.accion==='cancelar'){o.estado='cancelada';o.historia.push({ts:t,quien:'usuario',texto:'Cancelada'})}
+      return {ok:true,orden:o};
+    }
     if(ruta==='/api/senales')return {senales:[
       {tipo:'ciclo',ciclo:58,ts:ahora-600000,modelo:'nvidia/nemotron-3-super-120b-a12b:free',senales:[{simbolo:'SOL',accion:'COMPRAR',confianza:68,razon:'Rebote desde soporte con RSI bajo y volumen estable.',precio:141.3},{simbolo:'BTC',accion:'ESPERAR',confianza:60,razon:'Cerca de su objetivo; sin señal clara.',precio:84760},{simbolo:'ETH',accion:'ESPERAR',confianza:55,razon:'Tendencia lateral, RSI neutro.',precio:2686}],ordenes:[{simbolo:'SOL',accion:'COMPRAR',monto:24,motivo:'bajo su objetivo y RSI 33',resultado:'ejecutada',total:24,ia:{accion:'COMPRAR',confianza:68,razon:'Rebote desde soporte con RSI bajo y volumen estable.'}}]},
       {tipo:'radar',ts:ahora-3600000,modelo:'kilo-auto/free',senales:[{simbolo:'SUI',accion:'ESPERAR',confianza:55,razon:'(Demo) RSI alto tras subir 5%.'}]},

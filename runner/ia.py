@@ -8,6 +8,7 @@ Las nubes antiguas solo tienen GROQ_API_KEY: entonces se usa Groq como antes.
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 
@@ -53,6 +54,16 @@ def _llamar(url, clave, modelo, mensajes, formato_json=True):
     return resp["choices"][0]["message"]["content"]
 
 
+# Bitácora de llamadas a la IA de este ciclo (se manda en el reporte para que la
+# app muestre si la IA está respondiendo, con qué modelo y cuánto tarda).
+LOG = []
+
+
+def _anotar(proveedor_, modelo, ok, t0, error=None):
+    LOG.append({"ts": int(time.time() * 1000), "proveedor": proveedor_, "modelo": modelo, "ok": ok,
+                "ms": int((time.time() - t0) * 1000), "error": error})
+
+
 def chat_json(mensajes):
     """Prueba cada modelo hasta que uno responda JSON. Devuelve (dict, modelo, error)."""
     prov = proveedor()
@@ -64,10 +75,14 @@ def chat_json(mensajes):
     ultimo_error = None
     for modelo in modelos:
         for formato_json in (True, False):
+            t0 = time.time()
             try:
-                return extraer_json(_llamar(url, clave, modelo, mensajes, formato_json)), modelo, None
+                datos = extraer_json(_llamar(url, clave, modelo, mensajes, formato_json))
+                _anotar(nombre, modelo, True, t0)
+                return datos, modelo, None
             except urllib.error.HTTPError as e:
                 ultimo_error = f"{nombre} HTTP {e.code} con {modelo}"
+                _anotar(nombre, modelo, False, t0, f"HTTP {e.code}")
                 if e.code in (401, 403):
                     return None, None, ultimo_error
                 if e.code == 400 and formato_json:
@@ -75,6 +90,7 @@ def chat_json(mensajes):
                 break
             except Exception as e:  # red, JSON inválido, etc.
                 ultimo_error = f"{nombre}: {type(e).__name__} con {modelo}"
+                _anotar(nombre, modelo, False, t0, type(e).__name__)
                 break
     return None, None, ultimo_error
 

@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 import estrategia as E  # noqa: E402
 import ia  # noqa: E402
+import ordenes as O  # noqa: E402
 from exchanges import ESTABLES, ErrorExchange, Simulador, crear_exchange, crear_publico  # noqa: E402
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -82,7 +83,8 @@ def ciclo(remoto):
     saldos = ex.saldos()
     real = saldo_real(base, exchange_id, quote, saldos if not simulado else None, notas) if clave else None
     tenidos = [s for s in saldos if s != quote and s not in ESTABLES]
-    simbolos = sorted(set(cfg["objetivo"]) | set(tenidos))
+    pendientes = [o for o in (remoto.get("ordenes") or []) if o.get("estado") in ("propuesta", "aprobada")]
+    simbolos = sorted(set(cfg["objetivo"]) | set(tenidos) | {o["simbolo"] for o in pendientes})
     mercado = ex.precios(simbolos)
     precios = {s: d["precio"] for s, d in mercado.items()}
     sin_par = [s for s in tenidos if s not in precios]
@@ -91,6 +93,18 @@ def ciclo(remoto):
     ind = indicadores(ex, [s for s in simbolos if s in precios], cfg["marco"])
 
     costos = E.actualizar_costos(estado.get("costos") or {}, saldos, precios)
+
+    # 1) Órdenes que tú aprobaste (o creaste) y las de la IA ya aprobadas.
+    ordenes_upd, ejecutadas = [], []
+    if not cfg["pausado"]:
+        for o in [o for o in pendientes if o.get("estado") == "aprobada"]:
+            upd, op = O.ejecutar(ex, o, saldos, precios, costos, cfg, simulado)
+            ordenes_upd.append(upd)
+            if op:
+                ejecutadas.append(op)
+                saldos = ex.saldos()
+            elif upd.get("error"):
+                errores.append(f"Orden {o['accion']} {o['simbolo']}: {upd['error']}")
     propuestas, notas_e = E.proponer(cfg, saldos, precios, ind, costos)
     notas += notas_e
 
@@ -106,7 +120,20 @@ def ciclo(remoto):
         errores.append(error_ia)
     aprobadas, bloqueadas = E.aplicar_ia(cfg, propuestas, opiniones)
 
-    ejecutadas, fallidas = [], {}
+    # 2) Señales fuertes de la IA → órdenes nuevas (propuestas, o ejecutadas en modo auto).
+    nuevas = O.de_la_ia(cfg, opiniones, saldos, precios, pendientes)
+    for i, o in enumerate(nuevas):
+        o["id"] = f"ia{int(time.time())}{i}"
+        o["estado"] = "propuesta"
+        if cfg.get("ordenes_ia") == "auto" and not cfg["pausado"]:
+            o["estado"] = "aprobada"
+            upd, op = O.ejecutar(ex, o, saldos, precios, costos, cfg, simulado)
+            o.update({k: v for k, v in upd.items() if k != "id"})
+            if op:
+                ejecutadas.append(op)
+                saldos = ex.saldos()
+
+    fallidas = {}
     if cfg["pausado"]:
         notas.append("Bot en pausa: no se ejecutan operaciones")
     else:
@@ -156,6 +183,7 @@ def ciclo(remoto):
         "propuestas": propuestas, "bloqueadas": bloqueadas, "ejecutadas": ejecutadas,
         "notas": notas[:20], "errores": errores[:10], "ia": {"modelo": modelo, "modo": cfg["ia"], "opiniones": opiniones},
         "radar": radar, "real": real,
+        "ordenes_upd": ordenes_upd, "ordenes_nuevas": nuevas, "ia_log": ia.LOG[-20:],
         "ordenes": ordenes_ia(propuestas, bloqueadas, ejecutadas, fallidas, cfg["pausado"], opiniones),
     }
 
