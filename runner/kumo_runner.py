@@ -95,12 +95,18 @@ def ciclo(remoto):
     notas += notas_e
 
     contexto = {"exchange": exchange_id, "quote": quote, "mercado": {s: {**mercado.get(s, {}), **ind.get(s, {})} for s in simbolos if s in precios}}
-    opiniones, modelo, error_ia = ia.opinar(propuestas, contexto) if cfg["ia"] != "off" else ({}, None, None)
+    # La IA opina de las propuestas y además da su señal de las monedas del reparto
+    # y las que tienes, para que la app muestre en cada ciclo qué está pensando.
+    vigilar = [s for s in simbolos if s in precios][:8]
+    opiniones, modelo, error_ia = ia.opinar(propuestas, contexto, vigilar) if cfg["ia"] != "off" else ({}, None, None)
+    for s, o in opiniones.items():
+        if s in precios:
+            o["precio"] = precios[s]
     if error_ia:
         errores.append(error_ia)
     aprobadas, bloqueadas = E.aplicar_ia(cfg, propuestas, opiniones)
 
-    ejecutadas = []
+    ejecutadas, fallidas = [], {}
     if cfg["pausado"]:
         notas.append("Bot en pausa: no se ejecutan operaciones")
     else:
@@ -118,6 +124,7 @@ def ciclo(remoto):
                 saldos = ex.saldos()
             except ErrorExchange as e:
                 errores.append(f"{p['accion']} {sym}: {e}")
+                fallidas[(sym, p["accion"])] = str(e)[:160]
 
     precios_fin = dict(precios)
     total, activos = E.valorar(saldos, precios_fin, quote)
@@ -149,7 +156,31 @@ def ciclo(remoto):
         "propuestas": propuestas, "bloqueadas": bloqueadas, "ejecutadas": ejecutadas,
         "notas": notas[:20], "errores": errores[:10], "ia": {"modelo": modelo, "modo": cfg["ia"], "opiniones": opiniones},
         "radar": radar, "real": real,
+        "ordenes": ordenes_ia(propuestas, bloqueadas, ejecutadas, fallidas, cfg["pausado"], opiniones),
     }
+
+
+def ordenes_ia(propuestas, bloqueadas, ejecutadas, fallidas, pausado, opiniones):
+    """Qué pasó con cada orden propuesta y qué dijo la IA de ella."""
+    hechas = {(o["simbolo"], o["accion"]): o for o in ejecutadas}
+    frenadas = {(b["simbolo"], b["accion"]) for b in bloqueadas}
+    out = []
+    for p in propuestas:
+        k = (p["simbolo"], p["accion"])
+        if k in hechas:
+            res, total = "ejecutada", hechas[k]["total"]
+        elif k in frenadas:
+            res, total = "frenada", None
+        elif pausado:
+            res, total = "pausa", None
+        elif k in fallidas:
+            res, total = "error", None
+        else:
+            res, total = "pendiente", None
+        o = opiniones.get(p["simbolo"])
+        out.append({"simbolo": p["simbolo"], "accion": p["accion"], "monto": p.get("monto"), "motivo": p.get("motivo"),
+                    "resultado": res, "total": total, "error": fallidas.get(k), "ia": o})
+    return out
 
 
 def saldo_real(base, exchange_id, quote, saldos=None, notas=None):

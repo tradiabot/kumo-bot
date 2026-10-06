@@ -118,6 +118,20 @@ async function avisar(env: Env, items: Json[]) {
   await env.KUMO.put('feed', JSON.stringify([...nuevos.reverse(), ...feed].slice(0, 30)));
 }
 
+// ---------------------------------------------------------------- Señales de la IA
+// Historial de lo que dijo la IA en cada ciclo y qué pasó con cada orden, para
+// que la app lo muestre en vivo. Una escritura de KV por ciclo con señales.
+const MAX_SENALES = 60;
+async function guardarSenales(env: Env, ciclo: number, ts: number, r: Json): Promise<void> {
+  const op: Json = r.ia?.opiniones || {};
+  const senales = Object.keys(op).map((s) => ({ simbolo: s, ...op[s] }));
+  const ordenes: Json[] = Array.isArray(r.ordenes) ? r.ordenes : [];
+  if (!senales.length && !ordenes.length) return;
+  const lista = await leer<Json[]>(env, 'senales', []);
+  const item = { tipo: 'ciclo', ciclo, ts, modelo: r.ia?.modelo || null, modo_ia: r.ia?.modo || null, modo: r.modo, quote: r.quote, senales, ordenes };
+  await env.KUMO.put('senales', JSON.stringify([item, ...lista].slice(0, MAX_SENALES)));
+}
+
 // ---------------------------------------------------------------- Runner
 async function runnerReporte(env: Env, r: Json): Promise<Response> {
   const estado = await leer<Json>(env, 'estado', {});
@@ -138,6 +152,8 @@ async function runnerReporte(env: Env, r: Json): Promise<Response> {
     radar_ts: Array.isArray(radar) && radar.length ? ahora : estado.radar_ts || null,
   };
   await env.KUMO.put('estado', JSON.stringify(nuevo));
+
+  await guardarSenales(env, ciclo, ahora, r);
 
   const ops: Json[] = Array.isArray(r.ejecutadas) ? r.ejecutadas : [];
   if (ops.length) {
@@ -241,6 +257,9 @@ async function radarAnalizar(env: Env, cuerpo: Json): Promise<Response> {
     pct_sugerido: Math.max(1, Math.min(10, Number(d.pct_sugerido) || 3)),
   };
   analisisMem.set(sym, { ts: Date.now(), datos });
+  const lista = await leer<Json[]>(env, 'senales', []);
+  const item = { tipo: 'radar', ts: Date.now(), modelo, senales: [{ simbolo: sym, accion: veredicto, confianza: datos.confianza, razon: datos.resena.slice(0, 200), precio: fila.precio }] };
+  await env.KUMO.put('senales', JSON.stringify([item, ...lista].slice(0, MAX_SENALES)));
   return json(datos);
 }
 
@@ -253,6 +272,8 @@ async function api(req: Request, env: Env, ruta: string, url: URL): Promise<Resp
       const { runner, radar, ...resto } = estado;
       return json({ version: env.KUMO_VERSION || '1.0.0', config, ...resto, costos: runner?.costos || {} });
     }
+    case 'GET /api/senales':
+      return json({ senales: await leer<Json[]>(env, 'senales', []) });
     case 'GET /api/operaciones':
       return json({ operaciones: await leer<Json[]>(env, 'operaciones', []) });
     case 'GET /api/config':

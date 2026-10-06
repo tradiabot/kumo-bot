@@ -79,19 +79,29 @@ def chat_json(mensajes):
     return None, None, ultimo_error
 
 
-def opinar(propuestas, contexto):
-    """Devuelve ({SIMBOLO: {accion, confianza, razon}}, modelo|None, error|None)."""
-    if not propuestas:
+def opinar(propuestas, contexto, vigilar=None):
+    """Devuelve ({SIMBOLO: {accion, confianza, razon}}, modelo|None, error|None).
+    Si no hay propuestas, da su señal sobre las monedas de `vigilar` para que el
+    usuario vea en cada ciclo qué piensa la IA del mercado."""
+    if not propuestas and not vigilar:
         return {}, None, None
-    filas = [{k: p.get(k) for k in ("simbolo", "accion", "precio", "rsi", "tendencia", "peso", "objetivo", "pnl", "motivo")} for p in propuestas]
+    if propuestas:
+        filas = [{k: p.get(k) for k in ("simbolo", "accion", "precio", "rsi", "tendencia", "peso", "objetivo", "pnl", "motivo")} for p in propuestas]
+        pedido = ("La estrategia automática propone estas operaciones spot. Para cada símbolo opina "
+                  "COMPRAR, VENDER o ESPERAR, con confianza 0-100 y una razón breve (máx. 20 palabras). "
+                  "Sé escéptico: si los datos no lo justifican, ESPERAR.\n"
+                  f"Propuestas: {json.dumps(filas, ensure_ascii=False)}\n")
+        extra = [s for s in (vigilar or []) if s not in {p["simbolo"] for p in propuestas}]
+        if extra:
+            pedido += f"Da también tu señal para: {', '.join(extra)}.\n"
+    else:
+        pedido = ("No hay operaciones propuestas en este ciclo. Da tu señal spot para cada una de estas "
+                  f"monedas: {', '.join(vigilar)}. Para cada una: COMPRAR, VENDER o ESPERAR, confianza 0-100 "
+                  "y una razón breve (máx. 20 palabras). Sé escéptico: si los datos no lo justifican, ESPERAR.\n")
     mensajes = [
         {"role": "system", "content": "Eres un analista de riesgo cripto prudente. Respondes SOLO JSON válido en español."},
         {"role": "user", "content": (
-            "La estrategia automática propone estas operaciones spot. Para cada símbolo opina "
-            "COMPRAR, VENDER o ESPERAR, con confianza 0-100 y una razón breve (máx. 20 palabras). "
-            "Sé escéptico: si los datos no lo justifican, ESPERAR.\n"
-            f"Contexto: {json.dumps(contexto, ensure_ascii=False)}\n"
-            f"Propuestas: {json.dumps(filas, ensure_ascii=False)}\n"
+            pedido + f"Contexto: {json.dumps(contexto, ensure_ascii=False)}\n"
             'Formato: {"opiniones":[{"simbolo":"BTC","accion":"ESPERAR","confianza":60,"razon":"..."}]}'
         )},
     ]

@@ -107,6 +107,8 @@ html[data-estilo="manga"] .hero::before{content:"";position:absolute;inset:-50%;
 .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--acento2)}
 .bar em{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--acento)}
 .badge{display:inline-block;border:2px solid currentColor;border-radius:3px;padding:2px 6px;font-size:10px;font-weight:900;letter-spacing:.05em;white-space:nowrap}
+.conf{height:4px;background:var(--line);border-radius:3px;margin-top:5px;overflow:hidden}.conf i{display:block;height:100%;background:currentColor}
+.chipsS{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .badge.buy{color:var(--up)}.badge.sell{color:var(--down)}.badge.wait{color:var(--warn)}.badge.off{color:var(--muted)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chips button{padding:6px 11px;font-size:11px;border-radius:999px;color:var(--muted)}
@@ -550,7 +552,9 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 
 <section id="ia" class="screen" aria-label="IA">
   <div class="section-head"><div><span class="eyebrow"><span class="kata">エーアイ</span>INTELIGENCIA</span><h2>IA y bitácora</h2></div><span id="iaModo" class="pill">—</span></div>
-  <div class="panel"><div class="panel-title"><span>Opiniones de la IA (último ciclo)</span></div><div id="opiniones"><p class="empty">—</p></div></div>
+  <div class="panel"><div class="panel-title"><span>Señales de la IA</span><span id="iaVivo" class="pill live"><i></i>EN VIVO</span></div><small id="iaCab" class="muted">—</small><div id="opiniones"><p class="empty">—</p></div></div>
+  <div class="panel"><div class="panel-title"><span>Órdenes según la IA</span><span id="ordenesCuenta" class="pill">0</span></div><div id="ordenesIA"><p class="empty">—</p></div></div>
+  <div class="panel"><div class="panel-title"><span>Historial de señales</span></div><div id="senalesHist"><p class="empty">—</p></div></div>
   <div class="panel"><div class="panel-title"><span>Notas del bot</span></div><div id="notas"><p class="empty">—</p></div></div>
   <div class="panel"><div class="panel-title"><span>Bitácora de avisos</span><button id="bitRefresh" class="small">ACTUALIZAR</button></div><div id="bitacora"><p class="empty">—</p></div></div>
 </section>
@@ -653,7 +657,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.3.6';
+var APP_VERSION='1.3.7';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -721,11 +725,13 @@ function api(ruta,cuerpo){
 }
 
 // ---------------------------------------------------------------- Navegación
+var vista='panel';
 function irA(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('active',s.id===id)});
   document.querySelectorAll('.nav button').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-target')===id)});
   window.scrollTo(0,0);
-  if(id==='radar')cargarRadar();if(id==='ia')cargarBitacora();if(id==='cartera')cargarOps();if(id==='estrategia')pintarEstrategia();if(id==='config')pintarConfig();
+  vista=id;
+  if(id==='radar')cargarRadar();if(id==='ia'){cargarBitacora();cargarSenales()}if(id==='cartera')cargarOps();if(id==='estrategia')pintarEstrategia();if(id==='config')pintarConfig();
 }
 document.querySelectorAll('.nav button').forEach(function(b){b.onclick=function(){irA(b.getAttribute('data-target'))}});
 
@@ -1142,8 +1148,7 @@ function pintarEstado(){
   $('decisiones').innerHTML=filas.join('')||'<p class="empty">'+(e.ciclo?'Sin operaciones en el último ciclo: el mercado no cumple tus reglas.':'Esperando el primer ciclo…')+'</p>';
   // IA
   $('iaModo').textContent={off:'IA APAGADA',veto:'IA CON VETO',confirmar:'IA CONFIRMA'}[c.ia]||'—';
-  var op=(u.ia&&u.ia.opiniones)||{},ks=Object.keys(op);
-  $('opiniones').innerHTML=ks.length?ks.map(function(k){var o=op[k];return '<div class="row"><span class="info"><b>'+esc(k)+'</b> <span class="badge '+(o.accion==='COMPRAR'?'buy':o.accion==='VENDER'?'sell':'wait')+'">'+esc(o.accion)+' '+o.confianza+'%</span><small>'+esc(o.razon)+'</small></span></div>'}).join(''):'<p class="empty">La IA solo opina cuando la estrategia propone una operación.</p>';
+  pintarSenales();
   $('notas').innerHTML=(u.notas||[]).map(function(n){return '<div class="row"><span class="info"><small style="color:var(--text)">'+esc(n)+'</small></span></div>'}).join('')||'<p class="empty">—</p>';
   // Cartera
   var costos=e.costos||{};
@@ -1152,6 +1157,50 @@ function pintarEstado(){
     return '<div class="row"><span class="info"><b>'+esc(a.simbolo)+'</b> <small>'+num(a.cantidad,6)+' · '+precio(a.precio)+(a.costo?' · costo '+precio(a.costo):'')+(costos[a.simbolo]&&costos[a.simbolo].estimado?' (estimado)':'')+'</small><div class="bar"><i style="width:'+Math.min(100,a.peso)+'%"></i>'+(obj?'<em style="left:'+Math.min(99,obj)+'%"></em>':'')+'</div></span><span style="text-align:right"><b>'+num(a.valor,2)+'</b><small class="'+clsPct(a.pnl)+'">'+(a.pnl!=null?pct(a.pnl):num(a.peso,1)+'%')+'</small></span></div>';
   }).join('')||'<p class="empty">Sin activos todavía.</p>';
 }
+// ---------------------------------------------------------------- Señales de la IA
+// Lo que la IA dijo en cada ciclo y qué pasó con cada orden. Se refresca cada
+// 30 s mientras la pestaña IA está abierta. Nubes viejas sin /api/senales:
+// se muestran las opiniones del último ciclo.
+function claseAcc(a){return /COMPRAR|INCORPORAR/.test(a)&&!/NO /.test(a)?'buy':/VENDER|NO INCORPORAR/.test(a)?'sell':'wait'}
+function cargarSenales(){
+  return api('/api/senales').then(function(d){datos.senales=d.senales||[];pintarSenales()}).catch(function(){datos.senales=null;pintarSenales()});
+}
+function senalesDe(){
+  if(datos.senales&&datos.senales.length)return datos.senales;
+  var e=datos.estado||{},u=e.ultimo||{},op=(u.ia&&u.ia.opiniones)||{},ks=Object.keys(op);
+  return ks.length||(u.ordenes||[]).length?[{tipo:'ciclo',ciclo:e.ciclo,ts:e.actualizado,modelo:u.ia&&u.ia.modelo,senales:ks.map(function(k){return Object.assign({simbolo:k},op[k])}),ordenes:u.ordenes||[]}]:[];
+}
+function filaSenal(x){
+  var cl=claseAcc(x.accion);
+  return '<div class="row"><span class="info"><b>'+esc(x.simbolo)+'</b> <span class="badge '+cl+'">'+esc(x.accion)+' '+(x.confianza|0)+'%</span>'+(x.precio?' <small style="display:inline">@ '+precio(x.precio)+'</small>':'')+
+    '<small>'+esc(x.razon||'')+'</small><div class="conf '+(cl==='buy'?'up':cl==='sell'?'down':'warn-text')+'"><i style="width:'+Math.max(0,Math.min(100,x.confianza|0))+'%"></i></div></span></div>';
+}
+var RES={ejecutada:['EJECUTADA ✓','buy'],frenada:['FRENADA POR LA IA','off'],pausa:['EN PAUSA','off'],error:['ERROR','sell'],pendiente:['SIN EJECUTAR','wait']};
+function pintarSenales(){
+  if(!$('opiniones'))return;
+  var c=(datos.estado||{}).config||{},l=senalesDe(),ult=l.filter(function(x){return x.tipo==='ciclo'})[0]||l[0];
+  $('iaVivo').innerHTML='<i></i>'+(c.ia==='off'?'IA APAGADA':'EN VIVO');$('iaVivo').className='pill '+(c.ia==='off'?'warn':'live');
+  if(!ult){$('iaCab').textContent='';$('opiniones').innerHTML='<p class="empty">'+(c.ia==='off'?'La IA está apagada (Estrategia → IA).':'Las señales aparecen en el próximo ciclo de tu nube (cuenta regresiva en el Panel).')+'</p>'}
+  else{
+    $('iaCab').textContent=(ult.ciclo?'Ciclo #'+ult.ciclo+' · ':'')+hace(ult.ts)+(ult.modelo?' · '+ult.modelo:'');
+    $('opiniones').innerHTML=(ult.senales||[]).map(filaSenal).join('')||'<p class="empty">La IA no dio señales en ese ciclo'+(((datos.estado||{}).ultimo||{}).errores||[]).filter(function(x){return /IA|modelo|HTTP/.test(x)}).slice(0,1).map(function(x){return ': '+esc(x)}).join('')+'.</p>';
+  }
+  var ords=[];l.forEach(function(x){(x.ordenes||[]).forEach(function(o){ords.push(Object.assign({ts:x.ts,ciclo:x.ciclo},o))})});
+  $('ordenesCuenta').textContent=ords.length;
+  $('ordenesIA').innerHTML=ords.slice(0,40).map(function(o){
+    var r=RES[o.resultado]||[esc(o.resultado||'—'),'off'],ia=o.ia;
+    return '<div class="row"><span class="info"><b>'+esc(o.simbolo)+'</b> <span class="badge '+(o.accion==='COMPRAR'?'buy':'sell')+'">'+esc(o.accion)+'</span> <span class="badge '+r[1]+'">'+r[0]+'</span>'+
+      '<small>'+esc(o.motivo||'')+' · '+hora(o.ts)+'</small>'+
+      (ia?'<small>IA: <b class="'+(claseAcc(ia.accion)==='buy'?'up':claseAcc(ia.accion)==='sell'?'down':'warn-text')+'">'+esc(ia.accion)+' '+(ia.confianza|0)+'%</b> — '+esc(ia.razon||'')+'</small>':'<small>IA: sin opinión</small>')+
+      (o.error?'<small class="down">'+esc(o.error)+'</small>':'')+
+      '</span><span style="text-align:right"><b>'+(o.total!=null?num(o.total,2):o.monto?num(o.monto,2):'')+'</b></span></div>';
+  }).join('')||'<p class="empty">Aún no hay órdenes. Cuando tu estrategia proponga una compra o venta verás aquí qué dijo la IA y si se ejecutó.</p>';
+  $('senalesHist').innerHTML=l.slice(ult&&l[0]===ult?1:0,25).map(function(x){
+    return '<div class="row"><span class="info"><small style="color:var(--text)">'+(x.tipo==='radar'?'🔭 Radar':'Ciclo #'+(x.ciclo||'?'))+' · '+hora(x.ts)+'</small><div class="chipsS">'+(x.senales||[]).map(function(y){return '<span class="badge '+claseAcc(y.accion)+'" title="'+esc(y.razon||'')+'">'+esc(y.simbolo)+' '+esc(y.accion)+' '+(y.confianza|0)+'%</span>'}).join('')+'</div></span></div>';
+  }).join('')||'<p class="empty">El historial se llena ciclo a ciclo.</p>';
+}
+setInterval(function(){if(!document.hidden&&vista==='ia'&&datos.estado)cargarSenales()},30000);
+
 function filaOp(o){
   return '<div class="row"><span class="info"><b>'+esc(o.simbolo)+'</b> <span class="badge '+(o.accion==='COMPRAR'?'buy':'sell')+'">'+(o.accion==='COMPRAR'?'COMPRA':'VENTA')+'</span>'+(o.simulada?' <span class="badge off">SIM</span>':'')+'<small>'+esc(o.motivo||'')+(o.ts?' · '+hora(o.ts*1000):'')+'</small></span><span style="text-align:right"><b>'+num(o.total,2)+'</b><small>@ '+precio(o.precio)+(o.pnl!=null?' · <span class="'+clsPct(o.pnl)+'">'+pct(o.pnl)+'</span>':'')+'</small></span></div>';
 }
@@ -1458,6 +1507,10 @@ var DEMO=(function(){
   return {api:function(ruta,cuerpo){
     if(ruta==='/api/estado')return estado();
     if(ruta==='/api/operaciones')return {operaciones:ops};
+    if(ruta==='/api/senales')return {senales:[
+      {tipo:'ciclo',ciclo:58,ts:ahora-600000,modelo:'nvidia/nemotron-3-super-120b-a12b:free',senales:[{simbolo:'SOL',accion:'COMPRAR',confianza:68,razon:'Rebote desde soporte con RSI bajo y volumen estable.',precio:141.3},{simbolo:'BTC',accion:'ESPERAR',confianza:60,razon:'Cerca de su objetivo; sin señal clara.',precio:84760},{simbolo:'ETH',accion:'ESPERAR',confianza:55,razon:'Tendencia lateral, RSI neutro.',precio:2686}],ordenes:[{simbolo:'SOL',accion:'COMPRAR',monto:24,motivo:'bajo su objetivo y RSI 33',resultado:'ejecutada',total:24,ia:{accion:'COMPRAR',confianza:68,razon:'Rebote desde soporte con RSI bajo y volumen estable.'}}]},
+      {tipo:'radar',ts:ahora-3600000,modelo:'kilo-auto/free',senales:[{simbolo:'SUI',accion:'ESPERAR',confianza:55,razon:'(Demo) RSI alto tras subir 5%.'}]},
+      {tipo:'ciclo',ciclo:57,ts:ahora-2400000,senales:[{simbolo:'BTC',accion:'VENDER',confianza:70,razon:'Sobrecompra.'}],ordenes:[{simbolo:'ETH',accion:'VENDER',monto:20,motivo:'sobre su objetivo',resultado:'frenada',ia:{accion:'ESPERAR',confianza:72,razon:'La venta sería con pérdida.'}}]}]};
     if(ruta.indexOf('/api/feed')===0)return {items:feed,now:Date.now()};
     if(ruta==='/api/radar')return {radar:radar,actualizado:ahora-600000};
     if(ruta==='/api/radar/analizar'){var f=radar.filter(function(x){return x.simbolo===cuerpo.simbolo})[0]||{};var bueno=f.rsi<45&&f.tendencia!=='bajista';return {simbolo:cuerpo.simbolo,veredicto:bueno?'INCORPORAR':f.simbolo==='PEPE'?'NO INCORPORAR':'ESPERAR',confianza:bueno?72:55,resena:'(Demo) '+cuerpo.simbolo+' muestra RSI '+f.rsi+' y tendencia '+f.tendencia+'. En la app real, la IA de tu nube escribe aquí la reseña del proyecto.',riesgos:['Volatilidad alta','Ejemplo de demostración'],entrada:f.precio?f.precio*0.98:null,pct_sugerido:bueno?4:2,modelo:'demo'}}

@@ -70,6 +70,9 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   click(d,'.nav [data-target="cartera"]');await espera(30);
   ok(d.querySelectorAll('#activos .row').length===4&&d.querySelectorAll('#operaciones .row').length===2,'cartera y operaciones');
   click(d,'.nav [data-target="ia"]');await espera(30);ok(/Rebote/.test(d.getElementById('opiniones').textContent),'opiniones de la IA');
+  ok(/EJECUTADA/.test(d.getElementById('ordenesIA').textContent)&&/FRENADA POR LA IA/.test(d.getElementById('ordenesIA').textContent)&&/IA: COMPRAR 68%/.test(d.getElementById('ordenesIA').textContent),'órdenes según la IA con su resultado');
+  ok(/Radar/.test(d.getElementById('senalesHist').textContent)&&/Ciclo #57/.test(d.getElementById('senalesHist').textContent),'historial de señales');
+  ok(/Ciclo #58/.test(d.getElementById('iaCab').textContent)&&/nemotron/.test(d.getElementById('iaCab').textContent),'cabecera: ciclo, hora y modelo');
   click(d,'.nav [data-target="config"]');await espera(20);
   click(d,'#modoBtn');await espera(10);click(d,'#mSi');await espera(10);
   d.getElementById('confReal').value='real';click(d,'#mSi');await espera(30);
