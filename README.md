@@ -15,7 +15,13 @@ mantiene este repositorio.
 - **Reglas claras**: reparto objetivo por moneda, compra con RSI bajo, vende con ganancia. Por defecto **nunca vende con pérdida**.
 - **IA opcional y gratis**: puede vetar o confirmar cada operación y analiza monedas en el Radar. Funciona con cualquier proveedor compatible con OpenAI del catálogo de [itsfree.ai](https://itsfree.ai): **Kilo sin cuenta ni clave**, Groq, Google AI Studio, OpenRouter, Mistral u otro.
 - **Cualquier exchange**: Crypto.com (App y Exchange), Kraken, Coinbase, Bitstamp, MEXC, Gate… y cualquier id de [ccxt](https://github.com/ccxt/ccxt).
-- **App con 3 interfaces**: Neón Noche y Neón Día (manga cyberpunk) o Clásica.
+- **Órdenes con IA**: la IA propone órdenes y tú las apruebas, editas o cancelas (o la dejas ejecutar sola). También creas las tuyas con precio límite.
+- **Gráficas por activo**: precio con tu costo promedio, RSI y MACD en 1H, 4H y 1D, con velas de tu exchange.
+- **Semáforo en tiempo real**: nube, ciclos, IA y exchange; si algo falla te dice cómo arreglarlo y **«Buscar y corregir»** lo arregla solo cuando es seguro.
+- **Historial y señales en vivo**: qué dijo la IA en cada ciclo, con qué modelo y cuánto tardó.
+- **App con 5 interfaces**: Pro Grafito y Pro Porcelana, Neón Noche y Neón Día (manga cyberpunk) o Clásica.
+
+Novedades de cada versión: [CHANGELOG.md](CHANGELOG.md).
 
 ## Cómo se instala (desde la app)
 
@@ -40,13 +46,13 @@ mantiene este repositorio.
 
 - `runner/`: motor en Python (estrategia, IA, adaptadores de exchange). Pruebas: `python -m unittest discover -s runner/tests`.
 - `worker/`: API de la nube (TypeScript, KV). Nunca recibe las claves del exchange.
-- `.github/workflows/`: `instalar.yml` (despliega la nube) y `ciclo.yml` (un ciclo cada 30 min).
+- `.github/workflows/`: `instalar.yml` (despliega la nube), `ciclo.yml` (un ciclo cada 30 min) y `diagnostico.yml` (revisa exchange, IA y nube sin imprimir claves).
 - `app/android/`: app nativa con WebView (`assets/www/index.html`) y notificaciones nativas.
 
 ## Límites del plan gratis
 
 - **GitHub Actions** (repo privado): 2.000 min/mes. Un ciclo cada 30 min usa ~1.440.
-- **Cloudflare Workers/KV**: ~50 escrituras al día por usuario, muy por debajo del límite.
+- **Cloudflare Workers/KV**: unas 5 escrituras por ciclo (~250 al día), por debajo del límite gratis de 1.000.
 - **Binance, Bybit, OKX, KuCoin y Bitget** bloquean los servidores de EE. UU. donde corre GitHub Actions, por eso la app ya no los ofrece.
 - **Sin KYC:** Hyperliquid (DEX: te conectas con dirección + clave de una *API wallet* que puede operar pero no retirar; orden mínima 10 USDC) y MEXC (cuenta sin verificar con límite de retiro).
 
