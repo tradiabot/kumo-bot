@@ -10,6 +10,7 @@
     <queries>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="bitcoin" /></intent>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="monero" /></intent>
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="ethereum" /></intent>
     </queries>
 
     <application

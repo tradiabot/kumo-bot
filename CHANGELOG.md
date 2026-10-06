@@ -3,6 +3,17 @@
 Para actualizar: instala la APK nueva encima de la anterior (se conservan tus datos) y en la app
 toca **Config → Actualizar nube** para que tu nube reciba el código nuevo.
 
+## v1.5.1 — Modo simple y donaciones en USDC
+
+- **🌱 Modo simple:** abajo solo Panel, Cartera y Config. El Panel muestra lo que dice la IA
+  (toca una moneda para ver su gráfica) y las órdenes por aprobar, con ✔ Aprobar / ✖ Rechazar.
+  Las instalaciones nuevas empiezan en simple; se cambia en Config → Interfaz o en la bienvenida.
+  Quien ya usaba la app sigue en modo completo.
+- **Donaciones en USDC por Arbitrum** (mínimo 5 USDC), con QR, copiar y botón de billetera.
+  Desde Hyperliquid: Retirar → Arbitrum a esa dirección.
+- El semáforo compara tu nube con la versión mínima que necesita la app (ya no marca «nube vieja»
+  cuando solo cambió la app). Esta versión **no necesita actualizar la nube**.
+
 ## v1.5.0 — Gráficas por activo y semáforo con autocorrección
 
 - **📈 Gráficas por activo.** Toca una moneda en *Cartera* (o una señal en *IA*) y se abre su gráfica

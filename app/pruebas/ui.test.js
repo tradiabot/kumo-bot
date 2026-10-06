@@ -141,6 +141,29 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   click(d,'[data-billetera^="monero:"]');ok(/No hay billetera de Monero/.test(d.getElementById('toast').textContent),'avisa si no hay billetera Monero');
   click(d,'#temaChips [data-tema="dia"]');ok(d.documentElement.dataset.tema==='dia','cambio de tema desde Config');
   ok(w.appBack()===true&&d.querySelector('.screen.active').id==='panel','botón atrás vuelve al panel');
+  // ---- Donación en USDC y firma
+  const USDC='0xAC43f9b0E7F0ae6386cfC8ef6BFf62CE9c3006A1';
+  ok(d.getElementById('dirUsdc').textContent===USDC&&/mínimo 5 USDC/.test(d.getElementById('donar').textContent)&&/Retirar → Arbitrum/.test(d.getElementById('donar').textContent),'donación USDC en Arbitrum con mínimo y ruta desde Hyperliquid');
+  click(d,'[data-copiar="dirUsdc"]');ok(copias.slice(-1)[0]===USDC,'copiar dirección USDC');
+  click(d,'[data-billetera^="ethereum:"]');ok(billeteras.slice(-1)[0]==='ethereum:0xaf88d065e77c8cC2239327C5EDb3A432268e5831@42161/transfer?address='+USDC,'BILLETERA abre USDC en Arbitrum (EIP-681)');
+  ok(/Arbitrum/.test(d.getElementById('toast').textContent),'avisa si no hay billetera de Arbitrum');
+  const fi=d.getElementById('firma');ok(fi&&fi.textContent==='Hecho xhumanx + IA'&&fi.previousElementSibling.textContent.includes('¡Gracias!'),'firma debajo de «¡Gracias!»');
+  // ---- Modo simple
+  const visibles=()=>[...d.querySelectorAll('.nav button')].filter(b=>w.getComputedStyle(b).display!=='none').map(b=>b.dataset.target).join(',');
+  ok(w.__kumo.S.simple===true&&d.documentElement.hasAttribute('data-simple'),'instalación nueva empieza en modo simple');
+  ok(visibles()==='panel,cartera,config','modo simple: abajo solo Panel, Cartera y Config ('+visibles()+')');
+  ok(w.getComputedStyle(d.getElementById('simple')).display!=='none'&&w.getComputedStyle(d.getElementById('decisiones').closest('.panel')).display==='none','Panel simple: «La IA dice» en lugar de las decisiones');
+  await w.__kumo.cargarEstado();await espera(30);
+  ok(/SOL COMPRAR 68%/.test(d.getElementById('simpleDice').textContent),'Panel simple: lo que dice la IA');
+  const pr=d.querySelector('#simplePend [data-sid] [data-sa="aprobar"]');ok(!!pr,'Panel simple: órdenes por aprobar');
+  const sid=pr.closest('[data-sid]').dataset.sid;click(d,pr);await espera(10);click(d,'#mSi');await espera(60);
+  ok(/APROBADA/.test(d.querySelector('#simplePend [data-sid="'+sid+'"]').textContent),'aprobar desde el Panel simple');
+  click(d,'#simplePend [data-sid="'+sid+'"] [data-sa="cancelar"]');await espera(60);
+  ok(!d.querySelector('#simplePend [data-sid="'+sid+'"]'),'cancelar desde el Panel simple');
+  click(d,'.nav [data-target="config"]');click(d,'#modoUiChips [data-ui="completo"]');
+  ok(visibles().split(',').length===8&&!d.documentElement.hasAttribute('data-simple')&&w.__kumo.S.simple===false,'cambiar a modo completo desde Config');
+  w.__kumo.irA('radar');click(d,'#modoUiChips [data-ui="simple"]');
+  ok(d.querySelector('.screen.active').id==='panel','al pasar a simple desde una pestaña oculta vuelve al Panel');
   ok(errores.length===0,'sin errores JS: '+errores.join(' | '));
  }
  // ---------- 2) Asistente: crear la nube
@@ -341,6 +364,7 @@ const R=(status,data,headers)=>Promise.resolve({ok:status<400,status,json:()=>Pr
   const {w,d,errores}=crear(fetchMock,null,{onb:true,tuto:true,url:'https://kumo-bot.amigo.workers.dev',token:'t0k',gh:{owner:'amigo',repo:'kumo-nube',rama:'main',token:'ghp_prueba'}});
   await espera(80);click(d,'.nav [data-target="config"]');for(let i=0;i<30&&!d.querySelector('#semLuces [data-sem="ia"][data-nivel="rojo"]');i++)await espera(30);
   const fila=k=>d.querySelector('#semLuces [data-sem="'+k+'"]'),A=()=>d.getElementById('semAyuda').textContent;
+  ok(!d.documentElement.hasAttribute('data-simple'),'quien ya tenía la app conectada sigue en modo completo');
   ok(fila('nube').dataset.nivel==='amarillo'&&/v1\.4\.0/.test(fila('nube').textContent)&&/Actualizar el código/.test(A()),'nube vieja en amarillo con botón para actualizar');
   ok(fila('ciclos').dataset.nivel==='rojo'&&/60 días/.test(A()),'ciclos apagados por GitHub en rojo con explicación');
   ok(fila('exchange').dataset.nivel==='rojo'&&/lista de IPs/.test(A()),'exchange sin claves en rojo con instrucciones');

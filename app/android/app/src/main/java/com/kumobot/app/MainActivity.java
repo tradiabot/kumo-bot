@@ -139,7 +139,7 @@ public class MainActivity extends Activity {
         /** Abre una billetera con bitcoin:/monero:. Devuelve false si no hay ninguna instalada. */
         @JavascriptInterface
         public boolean abrirBilletera(String uri) {
-            if (uri == null || !(uri.startsWith("bitcoin:") || uri.startsWith("monero:"))) return false;
+            if (uri == null || !(uri.startsWith("bitcoin:") || uri.startsWith("monero:") || uri.startsWith("ethereum:"))) return false;
             Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
             if (i.resolveActivity(getPackageManager()) == null) return false;
             runOnUiThread(() -> { try { startActivity(i); } catch (Exception ignored) {} });

@@ -326,6 +326,13 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 .muestra.pro i,.muestra.pro-claro i{border-radius:4px}
 .muestra.pro i:nth-child(1){top:12px;background:linear-gradient(90deg,#ff4f97,#9b5cff)}.muestra.pro i:nth-child(2){top:26px;background:#38d4f0;right:24px}.muestra.pro i:nth-child(3){top:40px;background:#262b3b}
 .muestra.pro-claro i:nth-child(1){top:12px;background:linear-gradient(90deg,#e0337c,#9b5cff)}.muestra.pro-claro i:nth-child(2){top:26px;background:#0a8fb0;right:24px}.muestra.pro-claro i:nth-child(3){top:40px;background:#e2e5ee}
+/* Modo simple: solo Panel, Cartera y Config */
+html[data-simple] .nav button:not(.simple-ok){display:none}
+html[data-simple] .solo-completo{display:none!important}
+html:not([data-simple]) .solo-simple{display:none!important}
+.dice{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px}
+.simple-orden{border-top:1px dashed var(--line);padding:10px 0}
+.simple-orden:first-child{border-top:0}
 /* Gráficas por activo */
 .tap{cursor:pointer}.tap:active{opacity:.75}
 .tap .ver-g{font-size:10px;color:var(--acento2);font-weight:800;letter-spacing:.04em}
@@ -406,6 +413,11 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
       <button class="opcion" data-tema="noche"><span class="muestra noche"><i></i><i></i><i></i></span><span><b>Neón Noche</b><small>Manga cyberpunk oscuro: tramas, neón rosa y cian.</small></span></button>
       <button class="opcion" data-tema="dia"><span class="muestra dia"><i></i><i></i><i></i></span><span><b>Neón Día</b><small>Manga en papel claro: tinta negra y acentos neón.</small></span></button>
       <button class="opcion" data-tema="clasica"><span class="muestra clasica"><i></i><i></i><i></i></span><span><b>Clásica</b><small>La interfaz de terminal de TradBot, verde y sobria.</small></span></button>
+    </div>
+    <h2 style="margin-top:18px">¿Cuántos botones?</h2>
+    <div class="opciones" id="modosUi">
+      <button class="opcion" data-ui="simple"><span style="font-size:26px">🌱</span><span><b>Modo simple</b><small>Solo Panel, Cartera y Config: lo que dice la IA y las órdenes por aprobar. Recomendado para empezar.</small></span></button>
+      <button class="opcion" data-ui="completo"><span style="font-size:26px">🧰</span><span><b>Completo</b><small>Todas las pestañas: Órdenes, Radar, IA, Estrategia e Historial.</small></span></button>
     </div>
     <div class="onb-pie"><button data-ir="hola">◀</button><button class="primary" data-ir="inicio">SIGUIENTE ▶</button></div>
   </section>
@@ -554,6 +566,15 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
     <small id="actualizado">—</small>
   </div>
   <div id="erroresAviso" class="notice bad oculto"></div>
+  <div class="panel solo-simple" id="simple">
+    <div class="panel-title"><span>◎ La IA dice</span><span id="simpleIA" class="pill">—</span></div>
+    <div id="simpleDice"><p class="empty">—</p></div>
+  </div>
+  <div class="panel solo-simple">
+    <div class="panel-title"><span>✋ Por aprobar</span><span id="simplePendN" class="pill">0</span></div>
+    <div id="simplePend"><p class="empty">—</p></div>
+    <small class="muted" style="display:block;margin-top:6px">¿Quieres ver más? Config → Interfaz → <b>Completo</b>.</small>
+  </div>
   <div class="panel">
     <div class="panel-title"><span>Ciclo en la nube</span><span id="estadoPill" class="pill">—</span></div>
     <div class="grid two">
@@ -567,7 +588,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
     <p id="saldoReal" class="notice oculto" style="margin-top:9px"></p>
     <div class="grid two" style="margin-top:9px"><button id="cicloAhora" class="primary">▶ CICLO AHORA</button><button id="pausaBtn" class="danger">PAUSAR</button></div>
   </div>
-  <div class="panel">
+  <div class="panel solo-completo">
     <div class="panel-title"><span>Último ciclo · decisiones</span></div>
     <div id="decisiones"><p class="empty">—</p></div>
   </div>
@@ -670,6 +691,8 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
   <div class="panel">
     <div class="panel-title"><span>Interfaz</span></div>
     <div class="chips" id="temaChips"><button data-tema="pro">PRO GRAFITO</button><button data-tema="pro-claro">PRO PORCELANA</button><button data-tema="noche">NEÓN NOCHE</button><button data-tema="dia">NEÓN DÍA</button><button data-tema="clasica">CLÁSICA</button></div>
+    <div class="chips" id="modoUiChips" style="margin-top:8px"><button data-ui="simple">🌱 MODO SIMPLE</button><button data-ui="completo">🧰 COMPLETO</button></div>
+    <p id="modoUiTxt" class="muted" style="margin:6px 0 0;font-size:12px"></p>
     <div class="grid two" style="margin-top:8px"><button id="verBienvenida" class="small ghost">VER BIENVENIDA</button><button class="small ghost" data-tuto="0">📖 TUTORIAL</button></div>
   </div>
   <div class="panel">
@@ -705,6 +728,11 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
     <div class="panel-title"><span>☕ Apoya al desarrollador</span><span class="pill acento">VOLUNTARIO</span></div>
     <p class="muted" style="margin:0 0 10px;font-size:12px">Kumo es gratis y abierto. Si te sirve, puedes invitar un café al desarrollador. Envía cada moneda <b>solo por su propia red</b>.</p>
     <div class="don">
+      <div class="don-card"><div class="cab"><img src="donar/usdc.svg" alt=""><b>USDC · red Arbitrum</b></div>
+        <img class="qr" src="donar/qr-usdc.svg" alt="Código QR de la dirección USDC en Arbitrum">
+        <code class="dir" id="dirUsdc">0xAC43f9b0E7F0ae6386cfC8ef6BFf62CE9c3006A1</code>
+        <p class="ayuda" style="margin:6px 0 8px;font-size:11px;text-align:left">Solo <b>USDC en Arbitrum</b>, mínimo <b>5 USDC</b> (menos se pierde). <b>Desde Hyperliquid:</b> Retirar → Arbitrum → pega esta dirección (Hyperliquid cobra 1 USDC). No envíes por Ethereum, BNB ni otra red.</p>
+        <div class="grid two"><button class="small" data-copiar="dirUsdc">COPIAR</button><button class="small primary" data-billetera="ethereum:0xaf88d065e77c8cC2239327C5EDb3A432268e5831@42161/transfer?address=0xAC43f9b0E7F0ae6386cfC8ef6BFf62CE9c3006A1">BILLETERA</button></div></div>
       <div class="don-card"><div class="cab"><img src="donar/bitcoin.svg" alt=""><b>Bitcoin (BTC)</b></div>
         <img class="qr" src="donar/qr-bitcoin.svg" alt="Código QR de la dirección Bitcoin">
         <code class="dir" id="dirBtc">bc1qd9j45f4t0jwyhjhqh2kvz2cr7k8xye460rr2y7</code>
@@ -715,6 +743,7 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
         <div class="grid two"><button class="small" data-copiar="dirXmr">COPIAR</button><button class="small primary" data-billetera="monero:447gTj6Hg6gaAEAUmjqfhqDZr1PziUTvbT4LYLpmLVnTNVFK6cqeqPfh6P4neMKLWX5jDXAr94fWHacJwDvjmCzBBH8wPBt">BILLETERA</button></div></div>
     </div>
     <p class="ayuda" style="margin:10px 0 0">¡Gracias! ありがとう 🙏</p>
+    <p class="ayuda firma" id="firma" style="margin:4px 0 0;font-style:italic;opacity:.8">Hecho xhumanx + IA</p>
   </div>
   <div class="danger-zone">
     <div class="panel-title"><span class="down">Zona de peligro</span></div>
@@ -724,14 +753,14 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 </main>
 
 <nav class="nav" aria-label="Secciones">
-  <button class="active" data-target="panel">⌂<small>Panel</small></button>
+  <button class="active simple-ok" data-target="panel">⌂<small>Panel</small></button>
   <button data-target="ordenes">⇅<small>Órdenes</small></button>
   <button data-target="radar">⌖<small>Radar</small></button>
   <button data-target="ia">◎<small>IA</small></button>
-  <button data-target="cartera">◈<small>Cartera</small></button>
+  <button data-target="cartera" class="simple-ok">◈<small>Cartera</small></button>
   <button data-target="estrategia">◇<small>Estrategia</small></button>
   <button data-target="historial">☰<small>Historial</small></button>
-  <button data-target="config">⚙<small>Config</small></button>
+  <button data-target="config" class="simple-ok">⚙<small>Config</small></button>
 </nav>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -757,7 +786,10 @@ html[data-estilo="pro"] .dir{border-style:solid;border-radius:10px}
 <script>
 (function(){
 'use strict';
-var APP_VERSION='1.5.0';
+var APP_VERSION='1.5.1';
+// Versión mínima del código de la nube que esta app necesita (runner/version.txt).
+// Solo sube cuando cambian runner/ o worker/: si no, el semáforo marcaría «nube vieja» sin motivo.
+var NUBE_MIN='1.5.0';
 var PLANTILLA='tradiabot/kumo-bot';
 var NATIVO=window.KumoNative||null;
 var $=function(id){return document.getElementById(id)};
@@ -1189,7 +1221,8 @@ var TUTO=[
  '<li><b>◎ IA</b>: qué opinó la IA y la bitácora de avisos.</li>'+
  '<li><b>☰ Historial</b>: cada ciclo, cada llamada a la IA y cada orden, para ver que todo funciona.</li>'+
  '<li><b>◈ Cartera</b> y <b>◇ Estrategia</b>: tus activos, tu reparto y tus reglas.</li>'+
- '<li><b>⚙ Config</b>: tema, dinero real, notificaciones y cambiar claves.</li></ul>'+
+ '<li><b>⚙ Config</b>: tema, dinero real, notificaciones y cambiar claves.</li>'+
+ '<li>¿Demasiados botones? En Config elige <b>🌱 Modo simple</b>: solo Panel, Cartera y Config.</li></ul>'+
  '<label class="check" style="margin-top:12px;font-weight:700"><input type="checkbox" id="tutoOk"> Entendí: Kumo usa solo mis cuentas y empieza en simulación.</label>'
 ];
 var tutoI=0,tutoDespues=null;
@@ -1259,6 +1292,7 @@ function pintarEstado(){
     var tap=a.simbolo!==u.quote&&!/^(USD|USDT|USDC|DAI|EUR)$/.test(a.simbolo);
     return '<div class="row'+(tap?' tap" data-graf="'+esc(a.simbolo)+'"':'"')+'><span class="info"><b>'+esc(a.simbolo)+'</b>'+(tap?' <span class="ver-g">📈 VER GRÁFICA</span>':'')+' <small>'+num(a.cantidad,6)+' · '+precio(a.precio)+(a.costo?' · costo '+precio(a.costo):'')+(costos[a.simbolo]&&costos[a.simbolo].estimado?' (estimado)':'')+'</small><div class="bar"><i style="width:'+Math.min(100,a.peso)+'%"></i>'+(obj?'<em style="left:'+Math.min(99,obj)+'%"></em>':'')+'</div></span><span style="text-align:right"><b>'+num(a.valor,2)+'</b><small class="'+clsPct(a.pnl)+'">'+(a.pnl!=null?pct(a.pnl):num(a.peso,1)+'%')+'</small></span></div>';
   }).join('')||'<p class="empty">Sin activos todavía.</p>';
+  pintarSimple();
 }
 // ---------------------------------------------------------------- Señales de la IA
 // Lo que la IA dijo en cada ciclo y qué pasó con cada orden. Se refresca cada
@@ -1445,7 +1479,7 @@ function dibujar(h){
 }
 function conn(ok,txt){$('conn').className='pill '+(ok?'live':'bad');$('conn').innerHTML='<i></i><span>'+txt+'</span>'}
 function cargarEstado(){
-  return api('/api/estado').then(function(d){datos.estado=d;datos.config=d.config;conn(true,S.demo?'DEMO':'EN LÍNEA');pintarEstado()})
+  return api('/api/estado').then(function(d){datos.estado=d;datos.config=d.config;conn(true,S.demo?'DEMO':'EN LÍNEA');pintarEstado();if(esSimple())return cargarSimple()})
     .catch(function(e){conn(false,e.status===401?'TOKEN':'SIN RED');if(e.status===401)toast('Token inválido: reconecta en Config',true)});
 }
 function cargarOps(){
@@ -1666,7 +1700,7 @@ document.addEventListener('click',function(e){
   if(c){copiarTexto($(c.getAttribute('data-copiar')).textContent.trim(),'Dirección copiada');return}
   var b=e.target.closest('[data-billetera]');
   if(b){var uri=b.getAttribute('data-billetera');
-    if(NATIVO&&NATIVO.abrirBilletera){if(!NATIVO.abrirBilletera(uri))toast('No hay billetera de '+(uri.indexOf('monero')===0?'Monero':'Bitcoin')+' instalada: copia la dirección',true)}
+    if(NATIVO&&NATIVO.abrirBilletera){if(!NATIVO.abrirBilletera(uri))toast('No hay billetera de '+(uri.indexOf('monero')===0?'Monero':uri.indexOf('ethereum')===0?'Arbitrum (MetaMask, Rabby…)':'Bitcoin')+' instalada: copia la dirección',true)}
     else location.href=uri;}
 });
 $('irDonar').onclick=function(){$('donar').scrollIntoView({behavior:'smooth',block:'start'})};
@@ -1693,6 +1727,50 @@ window.onAvisosNativos=function(est){
 };
 function avisosListos(){pintarAvisos();api('/api/avisos/probar',{}).then(function(){NATIVO.revisarAhora();toast('¡Listo! Te llegará un aviso de prueba')}).catch(function(e){toast(traduce(e),true)})}
 $('avisosProbar').onclick=function(){NATIVO&&NATIVO.probar('Kumo Bot ☁️','Así se verán tus avisos.')};
+
+// ---------------------------------------------------------------- Modo simple
+// Para quien empieza: solo Panel, Cartera y Config. En el Panel aparece lo que dice
+// la IA y las órdenes por aprobar, sin entrar a Órdenes. Las nuevas instalaciones
+// empiezan en simple; quien ya usaba la app sigue en completo.
+var OCULTAS_SIMPLE=['ordenes','radar','ia','estrategia','historial'];
+function esSimple(){return S.simple===true}
+function aplicarModoUi(m){
+  if(m)S.simple=m==='simple';guardarS();
+  var h=document.documentElement;if(esSimple())h.setAttribute('data-simple','');else h.removeAttribute('data-simple');
+  document.querySelectorAll('[data-ui]').forEach(function(b){b.classList.toggle(b.classList.contains('opcion')?'sel':'active',(b.getAttribute('data-ui')==='simple')===esSimple())});
+  if($('modoUiTxt'))$('modoUiTxt').textContent=esSimple()?'Solo Panel, Cartera y Config. Las reglas siguen igual: la IA propone y tú apruebas desde el Panel.':'Todas las pestañas a la vista.';
+  if(esSimple()&&OCULTAS_SIMPLE.indexOf(vista)>=0)irA('panel');
+  if(esSimple()&&datos.estado)cargarSimple();
+}
+function cargarSimple(){
+  pintarSimple();
+  return api('/api/ordenes').then(function(d){datos.ordenes=d.ordenes||[];pintarSimple()}).catch(function(e){$('simplePend').innerHTML='<p class="empty">'+esc(e.status===404?'Tu nube aún no tiene órdenes: actualiza tu nube (Config).':traduce(e))+'</p>'});
+}
+function pintarSimple(){
+  if(!esSimple()||!$('simple'))return;
+  var e=datos.estado||{},u=e.ultimo||{},c=e.config||{},op=(u.ia&&u.ia.opiniones)||{};
+  var ks=Object.keys(op).sort(function(a,b){return (op[b].confianza|0)-(op[a].confianza|0)});
+  $('simpleIA').textContent=c.ia==='off'?'APAGADA':e.actualizado?hace(e.actualizado).toUpperCase():'—';$('simpleIA').className='pill'+(c.ia==='off'?' warn':'');
+  if(c.ia==='off')$('simpleDice').innerHTML='<p class="empty">La IA está apagada.</p>';
+  else if(!ks.length)$('simpleDice').innerHTML='<p class="empty">'+(e.ciclo?'La IA no dio señales en el último ciclo.':'Las señales llegan con el primer ciclo de tu nube.')+'</p>';
+  else{var top=op[ks[0]];
+    $('simpleDice').innerHTML='<div class="dice">'+ks.slice(0,6).map(function(k){return '<span class="badge tap '+claseAcc(op[k].accion)+'" data-graf="'+esc(k)+'">'+esc(k)+' '+esc(op[k].accion)+' '+(op[k].confianza|0)+'%</span>'}).join('')+'</div>'+
+      '<small class="muted">'+esc(ks[0])+': '+esc(top.razon||'')+'</small><small class="muted" style="display:block;margin-top:4px">Toca una moneda para ver su gráfica.</small>'}
+  var pend=(datos.ordenes||[]).filter(function(o){return o.estado==='propuesta'||o.estado==='aprobada'});
+  $('simplePendN').textContent=pend.length;
+  $('simplePend').innerHTML=pend.map(function(o){
+    return '<div class="simple-orden" data-sid="'+esc(o.id)+'"><b>'+(o.accion==='COMPRAR'?'Comprar ':'Vender ')+esc(o.simbolo)+'</b> <span class="badge '+(o.estado==='propuesta'?'wait">PROPUESTA':'buy">APROBADA · EN COLA')+'</span><small>'+descOrden(o)+(o.razon?' · '+esc(o.razon):'')+(o.nota?'<br>'+esc(o.nota):'')+'</small>'+
+      '<div class="grid two" style="margin-top:7px">'+(o.estado==='propuesta'?'<button class="small primary" data-sa="aprobar">✔ APROBAR</button>':'<span></span>')+'<button class="small danger" data-sa="cancelar">✖ '+(o.estado==='propuesta'?'RECHAZAR':'CANCELAR')+'</button></div></div>'}).join('')||
+    '<p class="empty">Nada por aprobar. '+({off:'Solo tú creas órdenes.',auto:'La IA ejecuta sola sus órdenes.'}[c.ordenes_ia]||'Cuando la IA vea una buena oportunidad te la propone aquí.')+'</p>';
+}
+$('simplePend').addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-sa]');if(!b)return;var id=b.closest('[data-sid]').getAttribute('data-sid'),a=b.getAttribute('data-sa');
+  var o=(datos.ordenes||[]).filter(function(x){return x.id===id})[0]||{};
+  var hecho=function(){return cargarSimple()};
+  if(a==='cancelar'){accionOrden({accion:'cancelar',id:id},o.estado==='propuesta'?'Propuesta rechazada':'Orden cancelada').then(hecho);return}
+  confirmar('Aprobar orden',(o.accion==='COMPRAR'?'Compra ':'Venta ')+o.simbolo+' · '+descOrden(o).replace(/<[^>]+>/g,'')+'. Se ejecuta en el próximo ciclo'+((datos.config||{}).modo==='real'?' con DINERO REAL.':' (simulación).'),'APROBAR').then(function(ok){if(ok)accionOrden({accion:'aprobar',id:id},'Aprobada').then(hecho)});
+});
+document.querySelectorAll('[data-ui]').forEach(function(b){b.onclick=function(){aplicarModoUi(b.getAttribute('data-ui'));if(!b.classList.contains('opcion'))toast(esSimple()?'Modo simple: solo Panel, Cartera y Config':'Modo completo: todas las pestañas')}});
 
 // ---------------------------------------------------------------- Gráficas por activo
 // Toca un activo (Cartera o señales de la IA) y se abre su gráfica: precio con tu
@@ -1842,7 +1920,7 @@ function evaluarSem(info,ms,err){
   semInfo=info||semInfo;
   if(err){sem.nube=err.status===401?luz('rojo','Token rechazado','token'):luz('rojo','No responde: '+traduce(err),'caida');sem.ciclos=sem.ciclos||luz('gris','Sin datos');sem.exchange=sem.exchange||luz('gris','Sin datos');return}
   var v=info.version||'1.0.0';
-  sem.nube=versionNum(v)<versionNum(APP_VERSION)?luz('amarillo','v'+v+' (la app es v'+APP_VERSION+') · '+ms+' ms','vieja',{ms:ms}):ms>3000?luz('amarillo','Responde lento · '+ms+' ms','lenta',{ms:ms}):luz('verde','En línea · v'+v,null,{ms:ms});
+  sem.nube=versionNum(v)<versionNum(NUBE_MIN)?luz('amarillo','v'+v+' (esta app necesita v'+NUBE_MIN+') · '+ms+' ms','vieja',{ms:ms}):ms>3000?luz('amarillo','Responde lento · '+ms+' ms','lenta',{ms:ms}):luz('verde','En línea · v'+v,null,{ms:ms});
   var edad=info.actualizado?(Date.now()-info.actualizado)/60000:null;
   if(semGH&&semGH.off)sem.ciclos=luz('rojo','GitHub apagó los ciclos automáticos','wf_off');
   else if(!info.ciclo)sem.ciclos=luz('rojo','Ningún ciclo todavía','sin_ciclos');
@@ -2071,10 +2149,12 @@ function iniciarApp(){
   cargarEstado();refresco=setInterval(function(){if(!document.hidden)cargarEstado()},60000);
 }
 aplicarTema(S.tema||'pro');
+if(S.simple===undefined&&!S.url&&!S.demo)S.simple=true;
+aplicarModoUi();
 $('appVer').textContent='v'+APP_VERSION;
 setTimeout(function(){buscarActualizacion(false)},2500);
 if(!S.onb||(!S.url&&!S.demo)){abrirOnb('hola');if(!S.tuto)abrirTuto(0)}else iniciarApp();
-window.__kumo={tuto:function(){return tutoI},S:S,datos:datos,irPaso:irPaso,irA:irA,W:function(){return W},pintarEstado:pintarEstado,rsiSerie:rsiSerie,macdSerie:macdSerie};
+window.__kumo={tuto:function(){return tutoI},S:S,datos:datos,irPaso:irPaso,irA:irA,W:function(){return W},pintarEstado:pintarEstado,cargarEstado:cargarEstado,rsiSerie:rsiSerie,macdSerie:macdSerie};
 })();
 </script>
 </body>
